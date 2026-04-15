@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Active learning strategy finder, Educate at JU</title>
+<link href="https://fonts.googleapis.com/css2?family=Georgia:ital@0;1&family=Calibri:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --lila: #961B81;
+    --lila-light: #c055ab;
+    --lila-dim: #3a0a32;
+    --turkos: #55AAA7;
+    --turkos-light: #7fcfcc;
+    --gul: #FFB500;
+    --bg: #ffffff;
+    --bg2: #f5f5f5;
+    --bg3: #eeeeee;
+    --border: rgba(0,0,0,0.1);
+    --border-hover: rgba(0,0,0,0.2);
+    --text: #1a1a1a;
+    --text-muted: #555555;
+    --text-dim: #888888;
+    --radius: 6px;
+    --radius-lg: 10px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 15px; }
+  body {
+    font-family: 'Calibri', 'Trebuchet MS', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* Header */
+  .site-header {
+    background: #ffffff;
+    border-bottom: 2px solid var(--lila);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .ju-wordmark {
+    font-family: Georgia, serif;
+    font-size: 1.15rem;
+    font-weight: normal;
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+  .ju-wordmark span { color: var(--lila); }
+  .header-title {
+    font-family: Georgia, serif;
+    font-size: 1rem;
+    font-weight: normal;
+    color: var(--text-muted);
+    border-left: 1px solid var(--border-hover);
+    padding-left: 1rem;
+    margin-left: 0.25rem;
+  }
+
+  /* Main layout */
+  .main { max-width: 1400px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+
+  /* Hero strip */
+  .hero {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero h1 {
+    font-family: Georgia, serif;
+    font-size: 1.6rem;
+    font-weight: normal;
+    color: var(--text);
+    margin-bottom: 0.35rem;
+  }
+  .hero h1 em { color: var(--lila); font-style: normal; }
+  .hero p { font-size: 0.975rem; color: var(--text-muted); max-width: 720px; }
+
+  /* TPACK strip */
+  .tpack-section { margin-bottom: 1.25rem; }
+  .section-label {
+    font-size: 0.88rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 0.5rem;
+  }
+  .tpack-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .tpack-btn {
+    font-family: 'Calibri', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 99px;
+    border: 1px solid var(--border-hover);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.03em;
+  }
+  .tpack-btn:hover { border-color: var(--turkos); color: var(--turkos); }
+  .tpack-btn.active { background: var(--lila); border-color: var(--lila); color: #fff; }
+  .tpack-legend {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    margin-top: 0.4rem;
+    min-height: 1.2em;
+    font-style: italic;
+  }
+
+  /* Filter grid */
+  .filter-area { margin-bottom: 1.25rem; }
+  .filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .filter-group { display: flex; flex-direction: column; gap: 4px; }
+  .filter-label {
+    font-size: 0.88rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  select, input[type=text] {
+    font-family: 'Calibri', sans-serif;
+    font-size: 0.9rem;
+    padding: 6px 8px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    width: 100%;
+    transition: border-color 0.15s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; padding-right: 24px; }
+  select:focus, input:focus { outline: none; border-color: var(--lila); }
+  select:hover, input:hover { border-color: var(--border-hover); }
+
+  .search-row { display: flex; gap: 10px; align-items: flex-end; }
+  .search-wrap { flex: 1; }
+  .btn-reset {
+    font-family: 'Calibri', sans-serif;
+    font-size: 0.9rem;
+    padding: 6px 16px;
+    background: transparent;
+    border: 1px solid var(--border-hover);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .btn-reset:hover { border-color: var(--lila); color: var(--lila); }
+
+  /* Results meta */
+  .results-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+  }
+  .count-badge {
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 2px 10px;
+    border-radius: 99px;
+    background: var(--lila);
+    color: #fff;
+  }
+
+  /* Table */
+  .table-wrap {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow-x: auto;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  thead { position: sticky; top: 0; z-index: 2; }
+  th {
+    background: var(--bg2);
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.15s;
+  }
+  th:hover { color: var(--turkos); }
+  th.sorted { color: var(--turkos); }
+  .sort-arrow { margin-left: 3px; font-size: 0.85rem; opacity: 0.5; }
+  th.sorted .sort-arrow { opacity: 1; }
+
+  td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: top;
+    max-width: 160px;
+  }
+  /* Column-specific width constraints */
+  td:nth-child(1) { min-width: 165px; max-width: 220px; } /* Strategy */
+  td:nth-child(2) { max-width: 120px; } /* Room */
+  td:nth-child(3) { white-space: nowrap; max-width: 100px; } /* Time */
+  td:nth-child(4) { white-space: nowrap; max-width: 80px; }  /* Group size */
+  td:nth-child(5) { max-width: 100px; } /* Format */
+  td:nth-child(6) { max-width: 120px; } /* Materials */
+  td:nth-child(7) { max-width: 120px; } /* Technology */
+  td:nth-child(8) { max-width: 120px; } /* AI use */
+  td:nth-child(9) { max-width: 110px; } /* TPACK */
+  td:nth-child(10){ max-width: 130px; } /* Field */
+  td:nth-child(11){ white-space: nowrap; max-width: 140px; } /* SOLO */
+  td:nth-child(12){ white-space: nowrap; max-width: 90px; }  /* Bloom's */
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.03); }
+
+  .name-cell { min-width: 165px; }
+  .strategy-name { font-family: Georgia, serif; font-size: 0.85rem; color: var(--text); margin-bottom: 3px; }
+  .strategy-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.45; }
+
+  /* Tags */
+  .tag {
+    display: inline-block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 99px;
+    margin: 1px 2px 1px 0;
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+  }
+  .tag-room    { background: rgba(85,170,167,0.15); color: var(--turkos-light); border: 1px solid rgba(85,170,167,0.25); }
+  .tag-format  { background: rgba(150,27,129,0.15); color: var(--lila-light);   border: 1px solid rgba(150,27,129,0.25); }
+  .tag-tpack   { background: rgba(255,181,0,0.12);  color: var(--gul);          border: 1px solid rgba(255,181,0,0.25); }
+  .tag-field   { background: rgba(255,255,255,0.06); color: var(--text-muted);  border: 1px solid var(--border); font-size: 0.78rem; }
+  .tag-ai      { background: none; border: none; color: var(--text-muted); font-size: 0.85rem; white-space: normal; line-height: 1.4; padding: 0; font-weight: normal; }
+  .tag-time    { background: rgba(255,181,0,0.1);   color: #d49a00;             border: 1px solid rgba(255,181,0,0.2); }
+
+  .ref-link {
+    color: var(--lila-light);
+    text-decoration: none;
+    font-size: 0.88rem;
+    line-height: 1.45;
+    word-break: break-word;
+  }
+  .ref-link:hover { color: var(--turkos); text-decoration: underline; }
+
+  .muted-cell { font-size: 0.85rem; color: var(--text-muted); word-break: break-word; }
+
+  .no-results {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    font-style: italic;
+  }
+
+  /* Footer */
+  .site-footer {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.82rem;
+    color: var(--text-dim);
+  }
+
+  @media (max-width: 640px) {
+    .hero h1 { font-size: 1.2rem; }
+    .filter-grid { grid-template-columns: 1fr 1fr; }
+    .site-header { flex-wrap: wrap; }
+    .header-title { border-left: none; padding-left: 0; }
+  }
+
+  .expand-row td { padding: 0 !important; border-bottom: 1px solid var(--border); }
+  .expand-panel {
+    padding: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.28s ease, padding 0.2s ease;
+    background: rgba(150,27,129,0.06);
+    border-left: 3px solid var(--lila);
+  }
+  .expand-panel.open {
+    max-height: 600px;
+    padding: 14px 16px 14px 20px;
+  }
+  .expand-panel p {
+    font-size: 0.92rem;
+    line-height: 1.72;
+    color: var(--text);
+    margin: 0;
+  }
+  .expand-panel .panel-keywords {
+    margin-top: 12px;
+    font-size: 0.88rem;
+    line-height: 1.7;
+  }
+  .kw-label {
+    display: block;
+    font-weight: 600;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .kw-link {
+    display: inline-block;
+    margin: 2px 4px 2px 0;
+    padding: 2px 10px;
+    background: rgba(150,27,129,0.07);
+    border: 1px solid rgba(150,27,129,0.2);
+    border-radius: 99px;
+    color: var(--lila);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: background 0.15s, color 0.15s;
+  }
+  .kw-link:hover {
+    background: var(--lila);
+    color: #fff;
+    border-color: var(--lila);
+  }
+  tr.data-row { cursor: pointer; }
+  tr.data-row:hover td { background: rgba(150,27,129,0.07) !important; }
+  tr.data-row.expanded td { background: rgba(150,27,129,0.06) !important; }
+  .expand-chevron {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    margin-right: 6px;
+    vertical-align: middle;
+    transition: transform 0.22s ease;
+    color: var(--lila-light);
+    flex-shrink: 0;
+  }
+  tr.data-row.expanded .expand-chevron { transform: rotate(90deg); }
+  .name-cell-inner { display: flex; align-items: flex-start; gap: 2px; }
+
+
+  /* Info button and popover */
+  .info-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--border-hover);
+    color: var(--text-dim);
+    font-size: 0.7rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    margin-left: 5px;
+    vertical-align: middle;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+    font-family: Georgia, serif;
+    line-height: 1;
+  }
+  .info-btn:hover { background: var(--lila); color: #fff; }
+
+  .info-popover {
+    display: none;
+    position: fixed;
+    z-index: 200;
+    background: #fff;
+    border: 1.5px solid var(--lila);
+    border-radius: 10px;
+    padding: 16px 18px;
+    max-width: 380px;
+    box-shadow: 0 6px 28px rgba(0,0,0,0.13);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--text);
+  }
+  .info-popover.open { display: block; }
+  .info-popover h4 {
+    font-family: Georgia, serif;
+    font-size: 1rem;
+    color: var(--lila);
+    margin-bottom: 8px;
+    font-weight: normal;
+  }
+  .info-popover p { margin-bottom: 8px; color: var(--text-muted); }
+  .info-popover p:last-child { margin-bottom: 0; }
+  .info-popover strong { color: var(--text); }
+  .popover-close {
+    position: absolute;
+    top: 8px; right: 10px;
+    background: none; border: none;
+    font-size: 1.1rem; cursor: pointer;
+    color: var(--text-dim);
+    line-height: 1;
+  }
+  .popover-close:hover { color: var(--lila); }
+
+  /* SOLO filter buttons */
+  .solo-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .solo-btn {
+    font-family: 'Calibri', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 99px;
+    border: 1px solid var(--border-hover);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .solo-btn:hover { border-color: var(--turkos); color: var(--turkos); }
+  .solo-btn.active { background: var(--turkos); border-color: var(--turkos); color: #fff; }
+
+  /* Bloom filter buttons */
+  .bloom-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .bloom-btn {
+    font-family: 'Calibri', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 99px;
+    border: 1px solid var(--border-hover);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .bloom-btn:hover { border-color: var(--gul); color: #a07000; }
+  .bloom-btn.active { background: var(--gul); border-color: var(--gul); color: #1a1a1a; }
+
+  .taxonomy-legend {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    margin-top: 0.4rem;
+    min-height: 1.2em;
+    font-style: italic;
+  }
+  .taxonomy-section { margin-bottom: 1.25rem; }
+
+  /* Tag variants for new taxonomy fields */
+  .tag-solo { background: rgba(85,170,167,0.1); color: var(--turkos); border: 1px solid rgba(85,170,167,0.25); font-size: 0.78rem; }
+  .tag-bloom { background: rgba(255,181,0,0.12); color: #8a6000; border: 1px solid rgba(255,181,0,0.35); font-size: 0.78rem; }
+</style>
+</head>
+<body>
+
+<!-- Info popovers -->
+<div class="info-popover" id="pop-field" role="dialog" aria-modal="true">
+  <button class="popover-close" onclick="closePopover('pop-field')" aria-label="Close">×</button>
+  <h4>Field of study</h4>
+  <p>This column shows the academic disciplines in which the strategy has been <strong>most commonly studied, tested, and reported</strong> in the research literature.</p>
+  <p>It does <strong>not</strong> mean the strategy only works in those fields. Most active learning strategies are transferable. A field label of <em>Medicine</em> or <em>STEM</em> reflects where the strongest published evidence comes from, not where the strategy is restricted to.</p>
+  <p>Strategies labelled <em>Any</em> have broad evidence across multiple disciplines or have been validated across diverse higher education contexts.</p>
+</div>
+
+<div class="info-popover" id="pop-tpack" role="dialog" aria-modal="true">
+  <button class="popover-close" onclick="closePopover('pop-tpack')" aria-label="Close">×</button>
+  <h4>TPACK: Technological Pedagogical Content Knowledge</h4>
+  <p>TPACK is a framework developed by Mishra and Koehler (2006) describing the knowledge a teacher needs to teach effectively with technology. It identifies seven overlapping knowledge domains:</p>
+  <p><strong>CK</strong> Content Knowledge: subject-matter expertise.<br>
+  <strong>PK</strong> Pedagogical Knowledge: teaching and learning methods.<br>
+  <strong>TK</strong> Technological Knowledge: using and adapting tools.<br>
+  <strong>PCK</strong> Pedagogical Content Knowledge: teaching strategies for specific content.<br>
+  <strong>TCK</strong> Technological Content Knowledge: how technology reshapes content.<br>
+  <strong>TPK</strong> Technological Pedagogical Knowledge: technology enabling new approaches.<br>
+  <strong>TPACK</strong> Full integration of all three.</p>
+  <p>The TPACK tags on each strategy show which knowledge domains a teacher primarily draws on when implementing it.</p>
+</div>
+
+<div class="info-popover" id="pop-materials" role="dialog" aria-modal="true">
+  <button class="popover-close" onclick="closePopover('pop-materials')" aria-label="Close">×</button>
+  <h4>Materials</h4>
+  <p>This field lists the <strong>typical physical or digital resources</strong> required to run the strategy, based on how it is most commonly implemented in the pedagogic literature and practice.</p>
+  <p>These are <strong>indicative defaults</strong>, not prescriptions. Many strategies can be adapted to use fewer or different resources depending on your context. The list reflects a standard implementation, not the only possible one.</p>
+</div>
+
+<div class="info-popover" id="pop-ai" role="dialog" aria-modal="true">
+  <button class="popover-close" onclick="closePopover('pop-ai')" aria-label="Close">×</button>
+  <h4>AI use</h4>
+  <p>This column suggests how <strong>generative AI tools</strong> (such as ChatGPT, Claude, or Copilot) could be integrated into the strategy, either by the teacher in preparation or by students as part of the activity itself.</p>
+  <p>These are illustrative possibilities, not requirements. AI integration should always be guided by your course's learning outcomes, your institution's policies, and transparent communication with students about when and how AI is being used.</p>
+</div>
+
+<div class="info-popover" id="pop-room" role="dialog" aria-modal="true">
+  <button class="popover-close" onclick="closePopover('pop-room')" aria-label="Close">×</button>
+  <h4>Room type</h4>
+  <p>This filter reflects the <strong>physical environment</strong> in which the strategy works best, based on its typical implementation:</p>
+  <p><strong>Any</strong>: no special room configuration required.<br>
+  <strong>Seminar</strong>: small group room with moveable furniture.<br>
+  <strong>ALC</strong>: Active Learning Classroom with cluster tables and shared screens.<br>
+  <strong>Lecture hall</strong>: large tiered room, often fixed seating.<br>
+  <strong>Lab / Studio / Field</strong>: specialist or outdoor space.</p>
+  <p>Most strategies can be adapted across environments with minor modifications.</p>
+</div>
+
+<div class="info-popover" id="pop-solo" role="dialog" aria-modal="true">
+  <button class="popover-close" onclick="closePopover('pop-solo')" aria-label="Close">×</button>
+  <h4>SOLO taxonomy</h4>
+  <p>The <strong>Structure of Observed Learning Outcomes</strong> (Biggs &amp; Collis, 1982) describes five levels of increasing structural complexity in student understanding:</p>
+  <p><strong>Prestructural</strong>: no relevant understanding yet.<br>
+  <strong>Unistructural</strong>: one relevant element identified.<br>
+  <strong>Multistructural</strong>: several elements, not yet connected.<br>
+  <strong>Relational</strong>: elements connected into a coherent whole.<br>
+  <strong>Extended abstract</strong>: understanding generalised beyond the given context.</p>
+  <p>Each strategy is tagged with the <strong>primary SOLO level it is designed to elicit</strong>. Simpler check tasks tend to operate at Unistructural or Multistructural level; richer activities that require connection-making and transfer tend to reach Relational or Extended abstract.</p>
+  <p>The level describes the <em>intended cognitive demand</em> of the strategy, not an absolute ceiling. Implementation and task design always matter.</p>
+</div>
+
+<div class="info-popover" id="pop-bloom" role="dialog" aria-modal="true">
+  <button class="popover-close" onclick="closePopover('pop-bloom')" aria-label="Close">×</button>
+  <h4>Bloom's taxonomy</h4>
+  <p>Bloom's revised taxonomy (Anderson &amp; Krathwohl, 2001) identifies six levels of cognitive processing, from lower-order to higher-order thinking:</p>
+  <p><strong>Remember</strong>: recall facts and basic concepts.<br>
+  <strong>Understand</strong>: explain ideas in your own words.<br>
+  <strong>Apply</strong>: use information in a new situation.<br>
+  <strong>Analyse</strong>: draw connections, break down components.<br>
+  <strong>Evaluate</strong>: justify a decision or course of action.<br>
+  <strong>Create</strong>: produce something new from parts.</p>
+  <p>Each strategy is tagged with the <strong>primary cognitive level it is designed to activate</strong>. This reflects the dominant demand of the strategy in a typical implementation. Many strategies touch multiple levels; the tag marks the primary target.</p>
+  <p>Use this filter to find strategies aligned with your intended learning outcomes.</p>
+</div>
+
+<header class="site-header">
+  <div class="ju-wordmark">Educate <span>at JU</span></div>
+</header>
+
+<main class="main">
+
+  <div class="hero">
+    <h1>Active learning <em>strategy finder</em></h1>
+    <p>100 evidence-based strategies for higher education. Filter by room, format, group size, TPACK dimension, and more to find the strategies that work in your context.</p>
+  </div>
+
+  <!-- TPACK filter -->
+  <div class="tpack-section">
+    <div class="section-label">Filter by TPACK knowledge domain <button class="info-btn" onclick="openPopover('pop-tpack', this)" aria-label="About TPACK">?</button></div>
+    <div class="tpack-row" id="tpack-row"></div>
+    <div class="tpack-legend" id="tpack-legend">Hover a button to see the knowledge domain definition.</div>
+  </div>
+
+
+  <!-- SOLO taxonomy filter -->
+  <div class="taxonomy-section">
+    <div class="section-label">Filter by SOLO taxonomy level <button class="info-btn" onclick="openPopover('pop-solo', this)" aria-label="About SOLO taxonomy">?</button></div>
+    <div class="solo-row" id="solo-row"></div>
+    <div class="taxonomy-legend" id="solo-legend">Hover a level to see its description.</div>
+  </div>
+
+  <!-- Bloom's taxonomy filter -->
+  <div class="taxonomy-section">
+    <div class="section-label">Filter by Bloom's taxonomy level <button class="info-btn" onclick="openPopover('pop-bloom', this)" aria-label="About Bloom's taxonomy">?</button></div>
+    <div class="bloom-row" id="bloom-row"></div>
+    <div class="taxonomy-legend" id="bloom-legend">Hover a level to see its description.</div>
+  </div>
+
+  <!-- Main filters -->
+  <div class="filter-area">
+    <div class="search-row" style="margin-bottom:10px">
+      <div class="search-wrap filter-group">
+        <label class="filter-label">Search strategy or keyword</label>
+        <input type="text" id="search" placeholder="e.g. debate, flipped, STEM...">
+      </div>
+      <button class="btn-reset" onclick="resetFilters()">Reset all filters</button>
+    </div>
+    <div class="filter-grid" id="filter-grid"></div>
+  </div>
+
+  <!-- Results -->
+  <div class="results-meta">
+    <span class="count-badge" id="count-badge">100</span>
+    <span id="results-label">of 100 strategies shown</span>
+  </div>
+
+  <div class="table-wrap">
+    <table id="main-table">
+      <thead id="table-head"></thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
+
+  <footer class="site-footer">
+    Educate at Jönköping University. TPACK framework: Mishra &amp; Koehler (2006). SOLO taxonomy: Biggs &amp; Collis (1982). Bloom's taxonomy: Anderson &amp; Krathwohl (2001). Search keywords link to Semantic Scholar.
+  </footer>
+
+</main>
+
+<script>
+const expandedDescs = {
+1: "Think-Pair-Share is a structured discussion technique where students first think individually about a question, then discuss their thinking with a partner, and finally share conclusions with the wider group. It works because it gives every student processing time before they are expected to speak, which increases the quality of contributions and lowers the threshold for participation. Research by Lyman (1981) and a substantial body of follow-up work confirm that participation rates rise significantly, particularly among students who rarely volunteer in open class questioning. To run it well, pose a question that requires genuine thinking rather than simple recall, give at least one minute of silent individual time before pair discussion begins, and then invite several pairs to share rather than just one. The most common pitfall is skipping the individual thinking phase when time feels tight, which causes less confident students to defer to their partner immediately and defeats much of the purpose.",
+2: "Peer Instruction is a structured technique where students respond individually to a conceptual multiple-choice question, then discuss their reasoning with neighbours who chose differently, and vote again before the teacher leads a whole-class debrief. The rationale is that a student who has just worked out a concept is often better placed to explain it to a confused peer than an expert who mastered it years ago. Mazur's work at Harvard showed dramatic improvements in conceptual understanding compared to traditionally taught cohorts, and the approach has since been validated across disciplines from medicine to economics. In practice, the questions need to target genuine conceptual understanding rather than recall. A plausible distractor should reflect a known misconception, not just a random wrong answer. The most common pitfall is writing questions that are too easy, which produces a high first-vote score and no real peer discussion.",
+3: "The flipped classroom is a course design approach where students engage with recorded lectures or readings before class, so that contact time can be used entirely for active work such as problem-solving, discussion, or collaborative tasks. The educational logic is that the activities most requiring teacher presence and peer interaction are the ones that should happen in the room, while passive content delivery does not need to. Bishop and Verleger's (2013) review shows consistent benefits for achievement and engagement, particularly in STEM, though the effect depends heavily on whether in-class time is genuinely active. Short pre-class videos of ten to fifteen minutes, paired with a low-stakes accountability task, are the practical foundation. Without that accountability step, preparation rates drop and the in-class activities fall apart. Teachers new to this model often underestimate how much effort goes into redesigning contact time. The flip does not reduce workload; it relocates it.",
+4: "Problem-based learning presents students with a complex, ill-structured real-world problem before any formal instruction is given, and asks small groups to identify what they know, what they need to find out, and how they will investigate. The point is not to solve problems using knowledge already possessed, but to develop the self-directed reasoning and professional judgement that come from working through genuine uncertainty. Hmelo-Silver's (2004) review of PBL research shows strong effects on deep understanding and clinical reasoning, particularly in medical education where the approach originated. Good PBL problems are genuinely messy, have no single correct answer, and connect directly to the professional competencies students are developing. Students accustomed to direct instruction often feel lost and anxious in early sessions, so structured scaffolding in the first few iterations helps considerably. Assessment also needs to reward the quality of reasoning rather than just the final answer.",
+5: "Case-Based Learning uses detailed narratives drawn from real or constructed professional practice as the primary vehicle for learning, asking students to analyse what is happening, apply relevant frameworks, and decide what should be done. The purpose is to contextualise abstract theory and develop the kind of professional judgement that cannot be built through lectures alone. Herreid's foundational work demonstrates that cases increase motivation and deepen students' ability to transfer knowledge to novel situations. Effective cases are rich enough to support multiple interpretations, contain genuine tensions or dilemmas, and resist easy resolution. A common pitfall is writing cases that are too tidy: if the right answer is obvious after a quick read, students treat the task as a comprehension exercise rather than genuine analysis. The teacher's role during case discussion is to press for evidence and reasoning rather than to validate conclusions.",
+6: "The Jigsaw technique divides a body of content into distinct sections, makes each student an expert on one section through preparation in an expert group, and then mixes groups so that students teach one another what they have learned. It is designed to create genuine positive interdependence: because each student holds a piece of knowledge the others need, the group cannot succeed unless everyone contributes. Aronson's (1978) original design was developed to reduce competition and increase cooperation, and meta-analyses confirm positive effects on both achievement and intergroup relations. In practice, the expert group preparation phase is the critical moment. If students have not engaged deeply enough with their material, the teaching they provide will be shallow. It is worth checking the quality of expert group understanding before the home-group teaching phase begins. The technique works best when the sections are parallel in complexity and equally essential to the whole.",
+7: "Team-Based Learning is a structured cooperative learning framework designed for large courses, built around pre-class preparation, individual and group readiness testing, and in-class application activities that all teams work on simultaneously. The key insight is that teams can do more demanding intellectual work than individuals, but only if they are stable, diverse, and held accountable for preparation. Michaelsen's research shows strong effects on content mastery and professional reasoning, particularly in health professions education. The individual Readiness Assurance Test followed immediately by the group test creates the conditions for productive team discussion, and the simultaneous reporting of answers across teams makes cross-group comparison and debate possible. A significant implementation pitfall is underinvesting in team formation. TBL requires stable teams maintained across the full course, not ad hoc groupings, and it requires a substantial redesign of assessment, peer evaluation, and course materials.",
+8: "A Gallery Walk turns the walls of a seminar room or ALC into a display space where student work, teacher-prepared prompts, or partially completed diagrams are posted around the room, and groups rotate through them adding annotations, questions, and responses using sticky notes or markers. The pedagogical value lies in making thinking visible and cumulative: by the time a group reaches the last station, they can see how multiple groups have responded to the same prompt, which creates a collective knowledge artefact worth discussing. Brame's (2016) synthesis of active learning research highlights visible student thinking as a driver of both metacognition and peer learning. In practice, prompts need to be specific enough to provoke substantive responses, and each station needs at least four to five minutes so groups can read what others have written before adding their own ideas. The final whole-class synthesis, where the teacher draws out patterns and surprises from what has been posted, is where the deepest learning tends to happen.",
+9: "The Muddiest Point asks students to write down, briefly and anonymously, the single concept or explanation they found most confusing in a session. It is one of the simplest formative assessment tools available and one of the highest-rated in terms of both teacher usefulness and student learning impact, according to Angelo and Cross (1993). The mechanism is straightforward: students identify confusion, the teacher reads the responses before the next session, and opens that session by addressing the most common or most significant gaps. Collecting responses digitally via a form or LMS survey makes it practical even in large classes. The key to making it work is closing the loop: students need to see that their responses were read and acted on. Without that follow-through, the task feels pointless and participation drops over time.",
+10: "The One-Minute Paper asks students to spend two to five minutes at the end of a session responding to two questions: what was the most significant thing you learned today, and what question remains unanswered for you? The metacognitive demand is the educational mechanism. To identify something as significant, students must first organise and evaluate what happened during the session, which consolidates memory and surfaces gaps. Angelo and Cross (1993) report it as one of the most frequently used and positively evaluated classroom assessment techniques across disciplines. For teachers, the unanswered questions column provides direct evidence of what to address at the start of the next class. The pitfall is collecting the papers and not acting on them; students notice quickly when their responses disappear. Using it occasionally rather than after every session maintains its value as a meaningful reflective task.",
+11: "Minute Paper with Peer Review adds a collaborative layer to the standard one-minute paper by having students exchange their written reflections with a partner, read each other's responses, and offer brief feedback before the teacher collects them. The purpose is to make individual reflection social and to give students practice in giving and receiving constructive feedback on short written work. Bean (2011) situates this within a broader argument that low-stakes writing tasks embedded in teaching improve both writing fluency and subject learning. In practice, the exchange works best when students are given a specific feedback frame rather than asked to comment freely, for example identifying one point they agree with and one they would push back on. A common pitfall is insufficient time: the exchange and brief discussion cannot be rushed into two minutes or neither activity is done properly. Five to eight minutes is a realistic minimum.",
+12: "A Socratic Seminar is a structured text-based discussion in which all questions are genuinely open, have no predetermined correct answer, and are driven by the students rather than the teacher. The educational purpose is to develop disciplined reasoning in a community of inquiry, where claims must be supported by evidence from the shared text and where participants build on, challenge, and refine one another's ideas. Tredway (1995) and the broader Socratic tradition argue that this kind of dialogue produces understanding that direct instruction cannot replicate. In practice the seminar works best in groups of ten to twenty-five. Students need explicit preparation for the format, since many expect the teacher to provide answers and feel uncomfortable when this does not happen. The most common pitfall is a teacher who cannot resist evaluating or summarising contributions as the discussion proceeds, which immediately converts the seminar into a conventional question-and-answer session.",
+13: "In a Fishbowl Discussion, a small inner circle of students discusses a topic or question in front of the rest of the class, who observe silently. After a set time, observers rotate into the inner circle, bringing new perspectives and building on what they have heard. The value of the format is that it makes discussion visible as a skill: the outer circle is asked to observe not just what is being said but how participants are building on contributions, managing disagreement, and drawing on evidence. Brookfield and Preskill (2005) describe it as one of the most effective formats for developing students' awareness of discussion as a practice. Giving observers a specific observation task, such as tracking who builds on whose ideas, prevents passive watching. A common pitfall is the inner circle running out of ideas before the rotation because the opening question was too narrow. A strong prompt and brief preparation time before the fishbowl begins help maintain momentum.",
+14: "Academic debate gives students the experience of constructing and defending an evidence-based argument for an assigned position, including one they may not personally hold. The educational purpose is to develop argumentation skills, deepen content knowledge, and build the capacity to reason from multiple perspectives. Vo and Morris (2006) show that structured debates increase critical thinking and communication skills, particularly when students must defend positions counter to their own beliefs, which forces genuine engagement with opposing evidence. Assign positions randomly and allow at least one week of preparation time so arguments are grounded in sources rather than intuition. The session structure should include opening statements, cross-examination, rebuttal, and a closing reflection in which students step out of their assigned roles and discuss what they actually believe and why. Skipping that final reflection is the most common pitfall, leaving students having performed a position without having processed it intellectually.",
+15: "Concept Mapping asks students to create a visual diagram showing how concepts within a topic relate to one another, with labelled connecting lines that explain the nature of each relationship. The educational value is that it externalises thinking: students cannot draw a meaningful map without first working out whether they actually understand how ideas connect, and gaps in the map reveal gaps in understanding that are not visible in prose writing. Novak and Cañas (2008) situate concept mapping within Ausubel's theory of meaningful learning and show consistent benefits for knowledge organisation and retention. In practice, asking students to start from a central concept and work outward produces better maps than giving them a blank page. A common pitfall is students who draw lists rather than networks, treating the map as a glorified outline. Showing examples of rich versus thin maps before students begin helps set the standard.",
+16: "Role Play asks students to take on an assigned character or professional role and work through a scenario that requires them to reason, communicate, and make decisions from within that perspective. The purpose is to develop empathy, contextual reasoning, and the ability to anticipate how different stakeholders experience a situation, which is particularly valuable in professional programmes where graduates will work with people in distress or conflict. Blatner (2009) and a substantial body of drama-in-education research confirm benefits for motivation, perspective-taking, and the transfer of conceptual knowledge to realistic situations. Role cards need to be detailed enough to guide students' reasoning but not so scripted that the interaction becomes mechanical. A common pitfall is inadequate debriefing: the learning from role play tends to be implicit, and a structured reflection after the activity is where students consolidate what they have experienced into transferable understanding.",
+17: "Simulation places students inside a realistic scenario modelled on professional practice, asking them to make decisions and respond to events in real time without a safety net. The purpose is to build professional competence and confidence in contexts where practising on real patients, clients, or systems would carry unacceptable risk. Issenberg et al.'s (2005) review of simulation in health professions education identifies structured feedback during and after the simulation as the mechanism most strongly associated with learning outcomes, more than the fidelity of the simulation itself. This means the debriefing session is at least as important as the simulation activity. In practice, briefing students thoroughly on their roles and the scenario parameters before starting reduces the time lost to procedural confusion. A common pitfall is running simulations without a proper debrief, which leaves experience unprocessed and learning unrealised.",
+18: "Project-Based Learning engages students in sustained inquiry into a real-world challenge over several weeks, producing a public product or outcome that is evaluated by genuine professional criteria. The educational rationale is that meaningful, extended work on a problem that matters develops both deep disciplinary knowledge and the collaborative, communicative, and problem-solving competencies that shorter tasks cannot build. Thomas's (2000) review identifies five key features of effective PBL: a driving question, student voice and choice in the investigation, constructive investigation rather than simply following instructions, a real audience for the product, and a reflective component. A common pitfall is teachers who over-structure the project to reduce risk of failure, which removes the productive struggle that drives learning. Regular brief checkpoints where groups share progress and receive feedback are more effective than waiting for a final submission.",
+19: "Design Thinking Workshops lead students through a structured five-stage process of empathising with a user or stakeholder, defining the core problem, generating ideas, building a low-fidelity prototype, and testing it against user feedback. The purpose is to develop iterative, human-centred problem-solving as a habit of mind. Brown (2008) and the broader design thinking literature argue that the willingness to prototype quickly and fail early is the key competency the method develops, which transfers across disciplines. In practice the workshop needs adequate physical materials for rapid prototyping: sticky notes, paper, and basic craft supplies are enough. A common pitfall is spending too long in the ideation phase and not leaving time for prototyping and testing, which means students never experience the feedback loop that is the heart of the method. The empathy stage is also frequently rushed, producing solutions to problems students have assumed rather than observed.",
+20: "Structured Academic Controversy asks groups of four students to research a genuine question, argue for one side, then switch and argue for the other, before dropping their assigned positions and working together to reach a consensus based on the best available evidence. The educational mechanism is cognitive conflict: holding two well-reasoned positions in tension, then resolving that tension through evidence-based deliberation, produces deeper understanding than simply learning one correct answer. Johnson and Johnson's (1992) extensive research on this technique shows benefits for critical thinking, perspective-taking, and content mastery. In practice the quality of the controversy question is decisive: it needs to be genuinely contested, supported by credible evidence on both sides, and relevant to the course content. A common pitfall is groups who reach a shallow consensus quickly to avoid conflict rather than engaging seriously with the opposing evidence.",
+21: "Collaborative Note-Taking has students co-create a shared document during or immediately after a lecture, with each student contributing their own notes, flagging gaps, and building on what others have recorded. The purpose is to make note-taking an active, socially supported process rather than a passive individual one, which produces more complete and accurate notes and helps students identify what they do and do not understand. Luo et al. (2018) show that students using collaborative notes outperform those taking individual notes on assessments of lecture content. In practice a shared Google Doc or similar platform works well, with a brief prompt encouraging students to comment on each other's entries rather than just adding parallel text. A common pitfall is one or two students writing everything while others freeride. Assigning section responsibilities and asking each contributor to add at least one clarifying question helps distribute engagement.",
+22: "Audience Response Systems, commonly called polling tools, allow teachers to send a question to all students simultaneously and display the distribution of responses in real time. The purpose is to make visible what the whole group is thinking, including misconceptions that would otherwise remain private, and to use that evidence to direct teaching. Caldwell's (2007) review shows benefits for attention, conceptual understanding, and classroom interaction, with effects strongest when instructors follow the poll with peer discussion and explanation rather than simply revealing the correct answer. Mentimeter, Poll Everywhere, and Kahoot all work well for this. In practice the value of a poll depends almost entirely on the quality of the question: recall questions produce data but not learning, while questions targeting known conceptual difficulties produce both. A common pitfall is using polls for entertainment or as a comprehension check on factual content rather than as a diagnostic tool for conceptual understanding.",
+23: "An Exit Ticket is a brief formative task completed individually before students leave the classroom, typically requiring them to answer a question, solve a problem, or identify a remaining confusion. The purpose is to give the teacher rapid evidence of what students understood from the session, and to give students one final moment of retrieval practice before the session ends. Fisher and Frey (2004) situate exit tickets within a broader framework of checking for understanding throughout a lesson and argue that without such checks, teachers routinely overestimate how much students have learned. The task needs to be brief enough to complete in two to three minutes and specific enough that responses are informative. A common pitfall is designing exit tickets that ask how students feel about the content rather than requiring them to demonstrate understanding. Feelings are not a reliable proxy for learning.",
+24: "Carousel Brainstorming places several large sheets of paper around the room, each with a different prompt or question, and rotates small groups through them on a timed cycle, with each group reading and building on what previous groups have written. The educational value is that it generates a large volume of ideas quickly while requiring students to engage with and extend the thinking of others rather than simply contributing in parallel. Himmele and Himmele (2011) describe this and similar approaches as Total Participation Techniques, designed to ensure all students are cognitively active simultaneously. In practice, prompts need to be genuinely open-ended and to benefit from multiple perspectives; questions with a single correct answer produce thin responses after the first group has visited. A common pitfall is groups running out of new things to add at later stations. Building in an instruction to challenge or extend a previous idea, rather than just adding new ones, maintains engagement across all rotations.",
+25: "Reciprocal Teaching is a structured small-group reading strategy in which students take turns leading discussion of a shared text using four specific cognitive moves: predicting what will come next, clarifying confusing passages, asking questions about the text, and summarising the key ideas. The educational rationale is that these four moves are what expert readers do automatically, and making them explicit and practiced develops them as transferable comprehension strategies. Palincsar and Brown's (1984) landmark study showed significant reading comprehension gains in students who received reciprocal teaching instruction. In practice, the technique requires initial modelling by the teacher before students lead independently, and students need time to become comfortable with each of the four roles. A common pitfall is the discussion leader doing all the cognitive work while group members remain passive. Assigning specific response roles to other group members helps distribute the thinking.",
+26: "Inquiry-Based Learning asks students to drive their own learning by formulating questions, designing investigations, collecting and analysing evidence, and drawing and communicating conclusions. The educational purpose is to develop the habits of mind and methodological skills of genuine disciplinary inquiry rather than to transmit a body of established knowledge. Hmelo-Silver et al. (2007) review strong evidence for its benefits on deep understanding and motivation, but note that the quality of teacher scaffolding is what separates effective inquiry from unproductive confusion. Guided inquiry, where the question is provided but the method is student-designed, is a more productive starting point than fully open inquiry for students without prior research experience. A common pitfall is providing so little structure that students spend most of their time confused about what they are supposed to be doing rather than thinking about the content.",
+27: "Learning Cells is a paired reading strategy in which two students alternate asking and answering questions based on the same assigned text, with the questioner also providing feedback on the quality of the answer. The purpose is to make individual reading preparation social and to give students practice in constructing questions at an appropriate level of challenge, not just answering them. Goldschmid and Goldschmid's (1976) original research showed that students in learning cells outperformed those who read and reviewed alone on subsequent assessments. In practice the quality of the questions students generate is the limiting factor. Providing a question stem or taxonomy level guide, such as asking students to write at least one application question rather than only recall questions, improves the depth of the exchange considerably. Works well as a short warm-up activity at the start of a seminar based on pre-assigned reading.",
+28: "Collaborative Problem Solving assigns small groups a discipline-specific problem that requires genuine joint reasoning rather than task division, with the expectation that the group produces a shared solution and can explain the reasoning behind it. The purpose is to develop both content understanding and the collaborative reasoning skills that are central to most professional contexts. Heller et al.'s (1992) research in physics shows that collaborative problem solving produces better conceptual understanding than individual practice, provided groups are well structured and problems are genuinely complex rather than routine. In practice, problems need to be chosen carefully: if a task can be solved efficiently by one person while others watch, students will not engage collaboratively. Assigning roles such as recorder, questioner, and explainer helps maintain distributed participation. A common pitfall is groups that divide the problem into parts and work in parallel rather than reasoning together.",
+29: "POGIL, Process-Oriented Guided Inquiry Learning, places small teams of three to five students at the centre of their learning through carefully structured activity worksheets that guide them from observation of data or examples through inference to the construction of a concept or principle. The purpose is to develop both subject knowledge and process skills such as critical thinking, communication, and metacognition simultaneously. Farrell et al. (1999) report significant gains in content achievement and retention in university chemistry courses compared to traditional instruction. The activity design is the critical element: each POGIL activity follows a specific learning cycle, and worksheets need to be carefully written to guide inference without transmitting answers. A common pitfall is teachers who circulate and answer questions directly rather than using probing questions to help teams reason their way to the answer, which undermines the guided inquiry mechanism.",
+30: "Socratic Questioning is an instructional approach in which the teacher responds to student statements with probing questions designed to expose assumptions, demand evidence, and press for deeper analysis rather than accepting surface-level answers. The purpose is to model the internal questioning that constitutes rigorous thinking and to develop students' capacity to interrogate their own reasoning. Paul and Elder's (2006) framework for critical thinking identifies Socratic questioning as the primary pedagogical mechanism for developing intellectual standards such as clarity, accuracy, and logical consistency. In practice the technique requires genuine patience: following a student's answer with 'What do you mean by that?' or 'What would be an example of that?' rather than evaluating it can feel uncomfortable at first for both teacher and students. A common pitfall is using Socratic questioning only with students who give wrong answers, which can feel like a punishment. It is most effective when applied to confident correct answers as well, pressing students to explain why they are right.",
+31: "Student-Generated Questions ask students to write questions about course content, either for upcoming assessments, for discussion, or as a revision activity. The educational purpose is to develop deeper understanding through the cognitive work of question construction. To write a good question, a student must first identify what is important, understand it well enough to construct a plausible distractor or a genuinely interesting problem, and assess what level of thinking the question targets. King (1992) shows that students who generate questions about content perform better on subsequent tests than those who simply re-read the material. In practice, providing a question taxonomy or a few examples of high-quality questions raises the level of student output considerably. A common pitfall is collecting student questions but never using them, which signals that the task was not genuinely valued. Using student questions in class discussion or incorporating the best ones into assessments closes the loop.",
+32: "Peer Teaching gives students the responsibility of preparing and delivering a short lesson to their classmates on a topic or section of the course. The educational rationale rests on the well-documented finding that teaching something to others is one of the most powerful ways to consolidate and deepen one's own understanding, a phenomenon sometimes called the protégé effect. Topping (1996) reviews extensive evidence showing that peer teachers gain as much or more from the activity as the students they teach. In practice students need structured preparation support, including guidance on how to explain rather than just summarise, how to check for understanding, and how to handle questions they cannot answer. A common pitfall is peer teaching sessions that consist of a student reading from slides, which benefits no one. Assessment criteria that reward clarity of explanation and responsiveness to questions, rather than just accuracy of content, produce better preparation.",
+33: "Peer Assessment asks students to evaluate each other's work using a shared rubric or criteria set, providing both a grade or mark and written feedback. The educational value is twofold: students develop evaluative judgement by applying criteria to someone else's work, and they receive feedback from multiple sources rather than only from the teacher. Topping's (2009) review of peer assessment across educational levels finds positive effects on achievement, self-regulation, and the quality of subsequent work. In practice, the criteria need to be explicit, exemplified, and applied in a training exercise before students assess real work, otherwise variability in marking is too wide to be meaningful. A common pitfall is students who give superficially positive feedback to avoid conflict. Building in a requirement to identify at least one specific area for development, with reference to the criteria, raises the quality and usefulness of feedback considerably.",
+34: "Self-Assessment asks students to evaluate their own work or performance against explicit criteria before submission or after receiving a grade, requiring them to articulate where their work is strong, where it falls short, and what they would do differently. The educational purpose is to develop evaluative judgement, the capacity to recognise quality in one's own work, which is a foundational skill for lifelong learning. Boud and Falchikov (1989) show that students who practice self-assessment regularly develop more accurate and stable judgements of their own performance over time. In practice the criteria need to be made very explicit and ideally exemplified with annotated student work samples before students assess themselves. A common pitfall is self-assessment that is treated as an add-on at the end of a task rather than integrated into the learning process from the beginning. When students know they will self-assess against criteria, they attend to those criteria differently while working.",
+35: "A Portfolio is a curated collection of student work gathered over a period of time, selected and organised by the student to demonstrate growth, achievement, or competence against defined outcomes. The educational purpose is to develop reflective practice and the capacity to assess one's own learning trajectory, which are particularly central in professional programmes such as teacher education, nursing, and the arts. Paulson et al. (1991) describe the portfolio as a tool that transforms assessment from something done to students into something done by students. In practice, portfolios need clear selection criteria and a required reflective commentary for each artefact, otherwise students simply collect work without making sense of it. A common pitfall is portfolios that become archives rather than curations: the selection and reflection, not the volume, are where the learning happens. Digital portfolios also make it easy to include multimodal evidence such as video, which can represent certain kinds of competence better than written work alone.",
+36: "Reflective Journaling asks students to write regularly and personally about their learning experiences, making connections between course content and their own prior knowledge, values, and professional aspirations. The educational purpose is to develop the habit of reflective practice and to build the metacognitive awareness that supports self-regulated learning. Moon (1999) distinguishes between descriptive reflection, a narrative account of what happened, and transformative reflection, which interrogates assumptions and generates new understanding. Structured prompts that move from observation through feeling and evaluation to analysis and action planning produce richer reflections than open-ended invitations to write about your learning. A common pitfall is assessing journals too heavily for accuracy of content, which turns them into essays rather than genuinely reflective writing. Assessment criteria that reward depth of reflection, honesty, and connection-making produce much more authentic responses.",
+37: "Learning Logs are a running record kept by students across a course, documenting what they have learned, what questions have arisen, and how their thinking has changed over time. Unlike reflective journals, which tend to focus on processing experience, learning logs are more explicitly tied to tracking knowledge development against course learning outcomes. Angelo and Cross (1993) situate them among the classroom assessment techniques most useful for helping students take ownership of their learning progress. In practice, a brief ten-minute log entry at the end of each session, guided by a few structured prompts, is more sustainable and more useful than occasional lengthy entries. A common pitfall is students who write summaries of what was covered in the session rather than engaging with what they personally understood, questioned, or connected to previous knowledge. Prompts that ask about a specific moment of confusion or a link the student noticed themselves tend to produce more genuine entries.",
+38: "Structured Controversy with Role Cards extends the Johnson and Johnson (1992) controversy framework by giving each student a detailed expert role identity, such as a public health specialist, an economist, or an affected community member, that shapes not only the position they argue but the kind of evidence and reasoning they are expected to deploy. The purpose is to develop understanding of how different professional and stakeholder perspectives lead to genuinely different, legitimate interpretations of the same situation. In practice the role cards need to be detailed enough to guide students' preparation but not so prescriptive that they eliminate the need for independent research. The transition from role-based argument to open deliberation needs to be explicitly marked, typically with a verbal instruction to step out of role. A common pitfall is groups that stay in role throughout the deliberation phase and never achieve the synthesis the activity is designed to produce.",
+39: "Muddiest Point with Peer Response adds a collaborative stage to the standard muddiest point by having students share their written confusions with a partner or small group before the teacher responds, so that peers attempt to resolve each other's confusion first. The educational value is that students often explain things to one another in ways that are more accessible than expert explanation, and the act of attempting an explanation also deepens the explainer's own understanding. Angelo and Cross (1993) provide the foundational rationale for muddiest point; the peer response extension adds the mechanisms of peer learning identified in cooperative learning research. In practice the peer response needs a time limit and a clear instruction: the goal is not to reassure a partner that the confusion is understandable, but to attempt a genuine explanation. A common pitfall is the peer response stage becoming a mutual confirmation that both students are confused, which is honest but not educationally productive.",
+40: "The Minute Thesis asks students to articulate the central argument of their own project or essay in a single, clear sentence within a sixty-second time limit. The purpose is to develop the capacity for precise academic argumentation, specifically the ability to identify and express a genuine thesis rather than a topic or a description. Bean (2011) argues that one of the most persistent problems in student academic writing is the absence of a genuine argumentative claim, and the Minute Thesis forces students to confront this directly and publicly. In practice running this with the whole group, where each student states their thesis aloud and peers ask clarifying questions, is more effective than a written version because the real-time pressure prevents hedging. A common pitfall is accepting thesis statements that are actually research questions or topic descriptions. Pressing students to add because or therefore to their statement is a simple technique for pushing toward genuine argumentation.",
+41: "Flipped Small-Group Discussion combines the flipped classroom model with a seminar discussion format, using pre-class preparation to free all contact time for substantive discussion in small groups of four to eight students. The educational rationale is that discussion, the format that benefits most from peer interaction and teacher facilitation, should occupy the time when everyone is in the room together, while content delivery, which does not require presence, happens before class. Bishop and Verleger (2013) find that the combination of individual pre-class engagement and active in-class discussion produces stronger outcomes than either alone. A short pre-class accountability task ensures preparation rates stay high. A common pitfall is discussions that lose direction after the first exchange because the opening question was too broad. A structured discussion protocol, such as a claim-evidence-reasoning frame, maintains productive focus.",
+42: "The Interactive Lecture breaks a conventional lecture into short segments of ten to fifteen minutes, each followed by a brief active task such as a pair discussion, a poll, a problem to solve, or a short written reflection. The purpose is to maintain attention, create regular retrieval opportunities, and allow misconceptions to surface and be addressed before they compound. Steinert and Snell's (1999) research on interactive lecturing shows significant benefits for attention and learning compared to uninterrupted lectures, with effects growing over the duration of the session. The active segments do not need to be elaborate: a single well-chosen question discussed in pairs for two minutes is sufficient to reset attention and consolidate the preceding content. A common pitfall is interactive segments that are too brief and too superficial to do any cognitive work, used mainly to create the appearance of activity rather than genuine engagement.",
+43: "Student Teams Achievement Divisions, or STAD, is a structured cooperative learning format in which heterogeneous teams of four to five students study content together and then each take an individual quiz, with team scores calculated based on each member's personal improvement rather than their absolute score. The improvement scoring system is the key design feature: it means that every team member's contribution matters equally regardless of prior achievement level. Slavin's (1980) research shows consistent positive effects on achievement across subjects and age groups. In practice, team composition matters considerably. Teams that are too homogeneous do not benefit from the peer explanation dynamic that drives learning gains. A common pitfall is using STAD for content that students could master individually without discussion, which reduces it to a scoring exercise rather than a genuine cooperative learning activity.",
+44: "Numbered Heads Together is a cooperative technique in which groups of four discuss a question together, and the teacher then calls a random number so that the student with that number in each group reports the group's answer. The purpose is to create individual accountability within group work: because any member may be called on, every student has a reason to engage with the discussion and to understand the group's reasoning rather than just agreeing with the most confident voice. Kagan's (1992) cooperative learning research identifies this kind of individual accountability as one of the structural features that most reliably produces engagement and learning in group tasks. In practice the random selection mechanism needs to feel genuinely random to maintain the accountability effect; teachers who predictably call on quiet students first remove the incentive for confident students to engage. Works well as a quick check of understanding after a group task.",
+45: "Snowball Discussion builds from individual thinking to pair discussion to small group synthesis to whole-class sharing in a structured sequence, with each stage requiring participants to integrate and expand on what was developed in the previous stage. The purpose is to give every student a safe starting point for discussion, to build confidence through progressively larger sharing contexts, and to produce a richly developed collective response. Barkley et al. (2014) situate this and similar structures within the evidence base for cooperative learning, which consistently shows better outcomes when discussion is structured rather than open-ended. In practice the timing of each stage matters: individual time needs to be genuinely protected so that introverted students are not immediately absorbed into their partner's thinking. A common pitfall is rushing the individual and pair stages to get to whole-class discussion, which defeats the purpose of the build-up.",
+46: "Think-Write-Pair-Share adds a written individual stage to the standard Think-Pair-Share sequence, asking students to commit their thinking to paper before they discuss with a partner. The purpose is to deepen individual processing and to give students something concrete to bring to the pair discussion rather than negotiating their thoughts in real time. Lyman's (1981) original framework identifies the individual thinking stage as critical; the writing variant reinforces this by requiring students to articulate rather than just hold a thought. In practice the written stage produces better pair discussions because students arrive with a position rather than a vague impression. A common pitfall is treating the writing as preparation for the sharing rather than as learning in its own right. Collecting and reading a sample of the written responses, even informally, gives the teacher useful formative information about what students understood.",
+47: "Collaborative Concept Testing follows the basic Peer Instruction sequence, using conceptual multiple-choice questions, but places more explicit emphasis on small groups working through their disagreement together before voting, with the expectation that groups will record and share their reasoning rather than just their answer. The purpose is to make the collaborative reasoning process visible and to give the teacher insight into the quality of group deliberation, not just whether groups reached the right answer. Mazur's (1997) foundational research on Peer Instruction shows that groups who engage in genuine argumentation about their reasoning show greater learning gains than those who simply vote with the majority. In practice this means choosing questions where two or three of the distractors are genuinely plausible, not just superficially wrong. A common pitfall is designing concept tests that can be resolved by group consensus rather than requiring groups to reason their way to the correct answer.",
+48: "The World Café is a structured large-group dialogue method in which small groups have a focused conversation at a table, then rotate to a new table while one person stays as host to brief incoming visitors on what was discussed. Over several rounds, ideas cross-pollinate across groups and a collective understanding emerges that no single group could have produced alone. Brown and Isaacs (2005) designed the format specifically to enable large groups to think together in ways that conventional plenary discussion cannot support. In practice the table paper and marker convention, where groups write and draw their ideas on the table cover and incoming groups can see the accumulated thinking, is worth maintaining even when it feels informal. A common pitfall is questions that are too narrow, which exhaust discussion after the first round. Questions that open out rather than narrow down, and that connect to genuine concerns of the participants, sustain multiple rounds of productive conversation.",
+49: "Fishbowl with Rotating Inner Ring extends the standard fishbowl format by making the rotation continuous: any outer-circle observer can tap in to the inner circle at any point, and the person they tap leaves to join the outer circle. The purpose is to make the discussion more dynamic and to reduce the separation between speakers and observers, encouraging more students to engage directly over the course of the session. Brookfield and Preskill (2005) discuss the rotating fishbowl as particularly effective for building whole-group ownership of a discussion rather than a performance by a few confident speakers. In practice the tap-in mechanism needs a clear physical signal and a brief explanation before the session begins, otherwise the transition is disruptive. A common pitfall is the same few students rotating in and out repeatedly while others remain permanent observers. Introducing a maximum number of turns per student can encourage wider participation.",
+50: "Problem Solving in Context embeds discipline-specific problems inside an authentic professional scenario so that students must first understand the context before identifying what kind of problem it is and what approach is appropriate. The purpose is to develop the contextual reasoning that professional practice requires, where problems rarely arrive pre-labelled and categorised. Heller et al. (1992) show that contextualised problems produce deeper conceptual understanding than formally equivalent decontextualised ones, even when the underlying mathematics or reasoning is identical. Scenario cards that describe a realistic professional situation without signalling the solution method are the core design element. A common pitfall is scenarios so thin that students skip the contextual reasoning and treat the problem as a standard exercise. The scenario needs enough texture and ambiguity to require genuine interpretation before solution.",
+51: "Analogical Reasoning Tasks ask students to identify the structural similarities between a concept or principle they are learning and a more familiar domain, then use that mapping to generate new inferences or predictions. The purpose is to leverage existing knowledge structures to support understanding of new ones, which is one of the most powerful mechanisms for conceptual learning identified in cognitive science. Gentner's (1983) structure-mapping theory provides the theoretical basis and shows that analogical reasoning produces deeper and more durable understanding than symbolic description alone. In practice, analogy tasks work best when the source domain is genuinely familiar to students and when the mapping is non-trivial, requiring students to identify relational structure rather than surface similarity. A common pitfall is analogies that are too perfect, which students accept without engaging with them critically. An analogy that breaks down in interesting places is often more instructive than one that holds throughout.",
+52: "Worked Example Analysis asks students to study a fully solved problem or completed task in detail, identifying the principles, decisions, and reasoning steps that the expert solution embodies, rather than attempting to solve a similar problem from scratch. The educational purpose is to reduce cognitive load during the initial stages of skill acquisition by allowing students to attend to the structure of expert reasoning rather than managing the demands of solution generation simultaneously. Sweller's (1988) cognitive load theory and subsequent research show that worked examples are more effective than problem-solving for novice learners, with the effect reversing as expertise develops. In practice, asking students to explain the purpose of each step, rather than just reading through the solution, is what activates the learning mechanism. A common pitfall is providing worked examples without any analytical task, which students treat as passive reading.",
+53: "Interleaved Practice mixes problems from different topics within a single practice session rather than blocking all problems of one type together before moving to the next. The purpose is to force students to identify which concept or method is appropriate before applying it, developing the discrimination ability that examinations and professional practice both require. Roediger and Karpicke (2006) and a substantial body of learning science research consistently show that interleaving produces better long-term retention and transfer than blocked practice, even though students typically find it more difficult and report less confidence during the practice session itself. In practice this means designing problem sets that require students to choose their approach rather than just execute a procedure. A common pitfall is the feeling of difficulty leading teachers or students to abandon interleaving in favour of blocked practice, which is easier but less effective for durable learning.",
+54: "Retrieval Practice is the use of frequent, low-stakes testing as a learning activity rather than merely as a measurement device. Students retrieve course content from memory through quizzes, free recall prompts, or flashcard review, which strengthens memory traces more effectively than re-reading or reviewing notes. Roediger and Karpicke (2006) show that the testing effect, the learning benefit of retrieval practice, is one of the most robust findings in cognitive psychology and produces significantly better long-term retention than equivalent time spent re-studying. In practice, digital tools such as Kahoot, Anki, or brief LMS quizzes make implementation low-friction. The questions should target the most important concepts and should vary in format across sessions. A common pitfall is framing retrieval practice as assessment, which raises student anxiety and defeats the purpose. Explicit communication that the quizzes are for learning, not grading, is important for maintaining a safe atmosphere.",
+55: "Spaced Repetition Systems use algorithms to schedule review of material at increasing intervals over time, presenting items again just as the student is about to forget them. The purpose is to exploit the spacing effect, one of the most reliable findings in memory research, to produce durable long-term retention with less total study time than massed practice. Cepeda et al.'s (2006) meta-analysis confirms robust spacing effects across content types, age groups, and retention intervals. In practice, platforms such as Anki generate the spacing schedule automatically once students or teachers have created a card set. The initial card creation is itself a valuable learning activity if students write the cards rather than downloading pre-made sets. A common pitfall is students who use spaced repetition for low-level factual recall but never apply higher-order retrieval tasks such as explaining relationships or solving problems from memory, which limits the depth of learning.",
+56: "Elaborative Interrogation asks students to generate an explanation for why a fact or principle is true rather than simply studying it as stated. The purpose is to activate prior knowledge and to force students to connect new information to existing understanding, which produces more durable and transferable learning than passive review. Dunlosky et al.'s (2013) comprehensive review of learning strategies rates elaborative interrogation as having moderate to high utility based on consistent evidence from multiple studies. In practice the technique is most effective when students are asked to generate their own explanations before being given the correct one, as the initial generative effort produces better learning even when the attempt is imperfect. A common pitfall is providing the why alongside the fact, which removes the generative step. Presenting facts as questions, such as why does this mechanism produce this outcome, and requiring students to attempt an answer before checking, preserves the learning benefit.",
+57: "An Anticipation Guide presents students with a series of statements about an upcoming topic before any instruction is given, and asks them to decide whether each statement is true or false based on their existing beliefs. After instruction, students revisit their initial responses and identify where their thinking has changed and why. The purpose is to activate prior knowledge, surface misconceptions, and create cognitive dissonance that motivates engagement with new material. Duffelmeyer (1994) shows that anticipation guides produce better comprehension and retention than reading or listening without pre-activation. In practice the statements need to be plausible enough that students with common misconceptions will endorse them confidently, creating a genuine shift when they encounter disconfirming evidence. A common pitfall is using clearly true or clearly false statements, which produce no cognitive engagement before or after instruction.",
+58: "The KWL Chart asks students to record what they already Know about a topic, what they Want to know, and what they have Learned after instruction or investigation. The purpose is to make prior knowledge visible, to focus learning intentions, and to provide a framework for evaluating the adequacy of new understanding. Ogle's (1986) original research in reading comprehension shows that KWL activates background knowledge and improves both engagement with and retention of new content. In practice the Want to Know column is the most educationally valuable and the most commonly neglected. Spending time generating genuine questions before instruction, rather than rushing to the learning phase, is what transforms KWL from a simple organiser into a genuine inquiry driver. A common pitfall is treating the Learned column as a summary of what was taught rather than a personal account of what the student now understands differently.",
+59: "Cognitive Apprenticeship structures learning around the gradual transfer of responsibility for a complex task from expert to novice, moving through stages of modelling, where the expert performs the task while making their reasoning explicit; coaching, where the novice attempts the task with targeted support; and fading, where support is progressively withdrawn as competence develops. Collins et al.'s (1989) model draws on the tradition of skilled craft apprenticeship and applies it to cognitive and academic tasks. The key mechanism is making tacit expert reasoning visible: the teacher does not just demonstrate the product but externalises the decisions, strategies, and self-corrections that go into producing it. In practice, narrating your own thinking aloud while performing a task is the most accessible form of modelling. A common pitfall is moving to independent practice too quickly, before students have enough supported experience to manage the task without becoming overwhelmed.",
+60: "Constructive Alignment Workshop brings students into the process of curriculum analysis by asking them to examine the relationship between a course's learning outcomes, its teaching and learning activities, and its assessment tasks, and to identify where the alignment is strong and where there are gaps. The educational purpose is both to develop students' understanding of how course design works and to produce genuinely useful feedback for the teacher. Biggs and Tang's (2011) constructive alignment framework is the theoretical foundation, and their argument that students learn what the assessment requires them to do is the central insight students should engage with. In practice this works best after students have experienced enough of the course to have evidence to draw on. A common pitfall is students who are too polite or deferential to identify genuine misalignments. Framing the task explicitly as feedback for improvement rather than evaluation of the teacher removes some of this reluctance.",
+61: "Epistemic Games ask students to adopt the roles, practices, and reasoning norms of a specific professional community, carrying out the kinds of inquiry, communication, and decision-making that practitioners in that community perform rather than simply studying what those practitioners know. The purpose is to develop professional ways of thinking by doing them in a structured, supported context. Shaffer's (2006) research on epistemic frames argues that professional identity and values are inseparable from professional knowledge, and that conventional instruction builds knowledge without building the frame. In practice these games are typically multi-session activities that require careful design of the professional context, the artefacts students produce, and the reflection activities that help them connect the game experience to disciplinary learning. A common pitfall is insufficient reflection between game sessions, which leaves the experience rich but the learning implicit.",
+62: "Studio Critique is a format from arts and design education in which students display work in progress and receive structured feedback from peers and the teacher in a shared space, defending their design decisions and responding to criticism. The purpose is to develop evaluative judgement by making the standards of quality in a discipline explicit and applying them to real work. Schön's (1987) concept of the reflective practicum provides the theoretical grounding: students learn professional knowledge by making tacit standards explicit through critique. In practice the structure of the critique matters: requiring each participant to identify one specific strength and one specific area for development before opening general discussion produces more balanced and useful feedback than a free-for-all. A common pitfall is students receiving critique passively rather than engaging with the reasoning. Asking students to respond to each piece of feedback before the group moves on maintains active participation.",
+63: "Collaborative Writing asks small groups to co-author a text together in a shared document, negotiating content, structure, and language in real time or asynchronously. The purpose is to develop both writing proficiency and the collaborative reasoning skills that shared authorship requires, including the ability to give and receive critical feedback on another person's draft. Storch's (2011) research on collaborative writing shows benefits for writing quality, grammatical accuracy, and learner engagement, particularly when partners adopt a pooling dynamic in which they genuinely co-construct meaning rather than dividing the text and working in parallel. Assigning roles such as lead drafter and critical reviewer can scaffold the collaborative dynamic at the start. A common pitfall is the division of labour that produces a document assembled from individually written sections, which looks collaborative but is not.",
+64: "Peer Writing Groups are regular, small-group meetings in which students bring drafts in progress and give and receive feedback from peers who are also writing within the same course context. The purpose is to build writing as a social, iterative practice rather than a solitary product, and to develop the feedback literacy that comes from responding to another writer's work in progress. Elbow's (1973) writing workshop tradition emphasises the value of authentic audience and response as the primary driver of writing development. In practice the groups need a structured protocol for giving feedback, such as writer reads aloud, listeners describe what they heard, listeners identify what is working, listeners ask questions, rather than evaluating grammar or surface features. A common pitfall is groups that reassure rather than challenge, producing warm but vague feedback that does not actually help the writer improve.",
+65: "Collaborative Annotation asks students to read and annotate a shared text using an online platform, leaving comments, questions, and responses that are visible to all members of the group. The purpose is to make individual reading social, to build on the diverse interpretive perspectives students bring to a text, and to develop the close reading practices that are central to many disciplines. Lackey and Lackey (2019) show that social annotation produces significantly more active engagement with texts than individual reading and improves both comprehension and discussion quality. Tools such as Perusall and Hypothesis support this format well. In practice, a specific annotation task, such as identifying a claim that needs more evidence or a connection to another course concept, produces more substantive annotations than an open invitation to comment. A common pitfall is annotations that are primarily summaries rather than interpretive or critical engagements with the text.",
+66: "Data Literacy Exercises give students access to real, often messy datasets and ask them to draw conclusions, evaluate methodology, or identify patterns, developing the applied statistical reasoning that conventional statistics instruction rarely builds on its own. The purpose is to develop data literacy as a habit of mind rather than a set of procedures, which requires working with genuine data in meaningful contexts. Gould (2010) argues that authentic data, questions students care about, and interpretive rather than procedural tasks are the three conditions for developing genuine statistical thinking. In practice the datasets should be interesting to students, such as public health statistics or economic data relevant to their discipline, and the tasks should leave analytical decisions open rather than specifying every step. A common pitfall is exercises so guided that students follow a procedure rather than reason about data.",
+67: "Lab Report Peer Review asks students to apply a rubric or set of criteria to evaluate a classmate's lab report before submission, providing both a structured assessment and written feedback. The purpose is to develop students' evaluative judgement of scientific writing, to give them experience of reading work at their own level, and to provide authors with formative feedback before the final grade. Topping (2009) shows that peer reviewers gain as much as or more from the process than the authors they review, largely because careful reading of another person's work develops critical standards that students then apply to their own writing. In practice the review criteria need to address both scientific content and report structure, and students need a calibration exercise using an exemplar before reviewing real work. A common pitfall is feedback that is too vague to be actionable: training students to identify the specific claim or section their comment refers to improves usefulness considerably.",
+68: "Error Analysis asks students to work through an incorrect solution or a flawed piece of reasoning, identify exactly where and why it goes wrong, and produce a correct version with an explanation of the repair. The purpose is to develop diagnostic reasoning by engaging with the kinds of mistakes that reflect genuine conceptual confusion rather than careless errors. Borasi (1994) argues that errors are not merely deficits to be corrected but productive resources for mathematical and scientific understanding, and that error analysis develops a qualitatively different relationship to content than practice with correct examples alone. In practice the errors need to be genuine and instructive rather than trivially obvious. The most useful errors are those that a plausible, partially understanding student might make. A common pitfall is students who spot the error quickly and correct it without investigating why the original reasoning was appealing, which misses the deeper diagnostic purpose.",
+69: "Concept Inventory Testing uses validated diagnostic instruments, typically multiple-choice questions with carefully designed distractors based on documented misconceptions, to reveal what students genuinely understand rather than what they can recall or reproduce. The purpose is to make persistent conceptual difficulties visible so that teaching can address them directly. Hestenes et al.'s (1992) Force Concept Inventory for physics is the original and most widely studied instrument, and its approach has since been adapted for dozens of disciplines. In practice concept inventories are most valuable when administered at the start of a topic to baseline understanding, and again after instruction to measure conceptual change. A common pitfall is treating inventory results as a grade rather than as diagnostic evidence. High scores on fact-based tests alongside low scores on the concept inventory reveal a gap between declarative and conceptual knowledge that is the most important finding the tool can produce.",
+70: "Peer Explanation asks one student to explain a concept to a partner while the partner listens actively, asks for clarification, and flags any point that does not make sense. The roles then reverse. The purpose is to develop both explanation and active listening as academic skills, and to leverage the finding that the process of explaining something to another person consolidates and deepens the explainer's own understanding more than re-studying does. Chi et al.'s (1989) research on self-explanation and peer explanation shows that generative processing during explanation, filling in gaps and making connections, is the mechanism responsible for learning gains. In practice the listener role needs to be given explicit instructions: the goal is to genuinely not understand until the explanation makes sense, not to be politely confused. A common pitfall is explanations that proceed uninterrupted while the listener nods, which produces no benefit for either party.",
+71: "Microteaching is a teacher preparation technique in which students teach a short lesson of ten to fifteen minutes to a small group of peers, often with the session recorded for later review and reflection. The purpose is to develop pedagogical skill through practice and structured feedback in a low-stakes environment before teaching in real professional contexts. Allen's (1966) original microteaching research at Stanford showed significant gains in specific teaching skills such as questioning, explaining, and managing transitions, and the approach has been a staple of teacher education programmes since. In practice the post-teaching reflection, supported by the recording, is where most of the learning happens. Peers should be given a structured observation focus rather than asked to comment generally. A common pitfall is feedback that focuses on superficial delivery features such as voice and posture rather than the pedagogical decisions behind the lesson design.",
+72: "Demonstration with Student Prediction asks the teacher to pause before each key step of a procedure or experiment and require students to predict the outcome before it is revealed. The purpose is to activate conceptual thinking during a demonstration, turning passive observation into active hypothesis testing. Crouch et al.'s (2004) study of interactive demonstrations in physics shows that student prediction significantly improves conceptual understanding compared to observation alone, and that conceptual understanding is further improved when predictions are discussed with a partner before the demonstration proceeds. In practice the prediction step needs to be genuine: if students suspect the teacher will proceed regardless, they disengage. Collecting predictions via a quick show of hands or a poll before each step creates accountability. A common pitfall is demonstrations where the outcome is so obvious that prediction adds no cognitive value. The most productive demonstrations are those where students with common misconceptions are likely to predict incorrectly.",
+73: "Guided Discovery Learning structures exploration so that students derive principles or generalisations from data, examples, or experiments through a sequence of carefully designed questions, rather than receiving explanations from the teacher. The purpose is to develop deep understanding and the capacity to construct knowledge, rather than to receive and reproduce it. Bruner's (1961) argument that discovery learning produces better understanding and stronger intrinsic motivation than direct instruction has been extensively refined; the current evidence supports guided discovery with structured scaffolding over both unguided discovery and pure transmission. The sequencing of questions is the critical design challenge: each question should be answerable with the information available, should build on the previous answer, and should move students one step closer to the target principle. A common pitfall is questions that are leading rather than genuinely open, which convert discovery into guessing what the teacher is thinking.",
+74: "Problem Posing asks students to generate their own problems from a given situation, phenomenon, or dataset, developing the capacity to identify and formulate questions rather than only to answer them. The purpose is to build analytical literacy and the kind of mathematical or scientific creativity that conventional problem-solving tasks rarely develop. Silver's (1994) research in mathematics education shows that problem posing develops both mathematical creativity and metacognitive awareness of problem structure. In practice the activity begins with a rich, open starting situation such as a graph, a dataset, or a scenario, and students are asked to write as many interesting questions as they can before selecting and refining the most productive one for investigation. A common pitfall is starting situations that are too constrained, which produce trivial or repetitive questions. The richness and openness of the starting situation is the primary limiting factor.",
+75: "Two-Stage Examination asks students to complete an individual exam first and then, immediately afterwards, to complete the same or a similar exam in small groups, with the group version counting for a smaller portion of the final grade. The purpose is to convert the examination into a genuine learning event by enabling collaborative reasoning and immediate feedback in a high-engagement context. Gilley and Clarkston (2014) show that two-stage exams improve performance on subsequent assessments compared to conventional exams, not only for the collaborative questions but for related content. In practice the group exam works best with the same questions as the individual exam, because students arrive with strong personal stakes in the reasoning and discuss more substantively than when the questions are different. A common pitfall is insufficient time for the group stage; if groups are rushed, they default to averaging individual answers rather than reasoning together.",
+76: "Structured Reflection Protocol asks students to move through a defined sequence of reflective stages, typically based on Gibbs's (1988) reflective cycle or a similar framework, covering description of the experience, emotional response, evaluation, analysis, general conclusion, and action planning. The purpose is to develop the habit of structured critical reflection that underpins professional learning in practice-based disciplines. Gibbs's framework is widely used in nursing, teacher education, and social work because it moves students beyond simple description into the kind of evaluative and analytical reflection that actually produces changed practice. Structured prompts at each stage, rather than a single open reflection question, are essential for students who are new to reflective writing. A common pitfall is students who complete the description stage in detail and then rush through analysis and action planning. Assessment criteria that weight the analytical stages most heavily encourage more complete engagement with the cycle.",
+77: "Service Learning integrates structured community engagement with academic coursework, asking students to apply disciplinary knowledge in real community or organisational settings and to reflect on what that experience reveals about both their field and themselves. The purpose is to develop civic responsibility, professional competence, and the capacity to learn from practice as well as from texts. Eyler and Giles (1999) show that the quality of structured reflection, not the number of service hours, is the strongest predictor of academic and personal learning outcomes in service learning programmes. In practice the community placement needs to be genuinely reciprocal: the partner organisation should benefit from the students' work, not merely host it. A common pitfall is insufficient connection between the service experience and the course curriculum, which leaves students with rich experiences that do not contribute to their disciplinary understanding.",
+78: "Experiential Learning Cycle structures activities around Kolb's (1984) four-stage cycle of concrete experience, reflective observation, abstract conceptualisation, and active experimentation. The educational purpose is to ensure that direct experience is not left as an unprocessed event but is systematically reflected on, theorised about, and tested in new contexts. Kolb argues that learning is the process of creating knowledge through the transformation of experience, and that each stage of the cycle is necessary for durable, transferable learning. In practice this means designing structured reflection activities after any experiential element of a course, including placements, field visits, laboratory sessions, and role plays. A common pitfall is cycles that stop at reflection without moving to conceptualisation: students who can describe and evaluate an experience but cannot connect it to theoretical frameworks have completed only half the cycle.",
+79: "Authentic Assessment Tasks ask students to produce real-world artefacts evaluated by professional criteria, such as a policy brief, a clinical assessment, a design proposal, or a research report for a real client. The purpose is to develop the competencies that matter in professional practice and to make the relevance of learning visible to students by connecting their work to genuine outcomes. Wiggins (1993) defines authentic assessment as requiring students to apply knowledge and skills in contexts that mirror the complexity and constraints of real professional work. In practice the task brief needs to specify the audience, purpose, and constraints of the professional context, not just the content to be addressed. A common pitfall is authentic tasks that are assessed using generic academic criteria rather than professional ones, which signals that the professional context is a costume rather than a genuine frame.",
+80: "Online Discussion Forums are asynchronous text-based discussions hosted in an LMS, where students respond to a prompt and to one another's posts over an extended period rather than in a single synchronous session. The purpose is to enable thoughtful, evidence-based discussion with more equitable participation than synchronous formats allow, since students who need more time to process ideas or who are less verbally confident can contribute with equal weight. Garrison et al.'s (2000) Community of Inquiry framework identifies social presence, cognitive presence, and teaching presence as the three conditions that must be sustained for online discussion to produce genuine learning. In practice the design of the initial prompt is critical; a question that has a defensible correct answer shuts down discussion, while a question that requires students to take a position based on evidence and reasoning sustains it. A common pitfall is discussion forums in which students post to the prompt but do not genuinely engage with one another's responses.",
+81: "Video-Based Discussion uses a carefully selected short clip as a shared stimulus for analysis and discussion, asking students to watch, interpret, and critique what they observe rather than simply describe it. The educational purpose is to develop the analytical skills specific to moving-image content and to provide a concrete, shared reference point that grounds abstract discussion. Brame (2016) reviews evidence that video can support active learning when it is accompanied by tasks that require students to process rather than passively view. In practice pausing the video at a key moment and asking students to predict what will happen next, or to identify what principle is being illustrated, activates engagement more effectively than watching through and then discussing. A common pitfall is selecting videos that are so polished and entertaining that students watch rather than think. Deliberately imperfect or contested examples are often more productive discussion stimuli.",
+82: "Student-Created Videos ask students to research, script, record, and edit a short explanatory or analytical video as a course assignment, producing a multimedia artefact that demonstrates their understanding of a topic. The purpose is to develop both content mastery and the communication skills required to explain complex ideas clearly and engagingly to a defined audience. Hung's (2015) research on student video production shows benefits for motivation, deep processing of content, and digital media literacy. In practice the assessment criteria need to balance content accuracy, clarity of explanation, and production quality, with content accuracy weighted most heavily so that students invest in understanding rather than production values. A common pitfall is students who focus almost entirely on production quality, producing visually impressive videos with shallow or inaccurate content. An intermediate submission of the script or storyboard allows the teacher to check content understanding before production begins.",
+83: "Digital Storytelling asks students to create a short multimedia narrative, combining their own voice recording with images, video clips, and text, to communicate a personal perspective, a case study, or an argument related to course content. The educational purpose is to develop reflective and communicative competence by requiring students to find their own voice and make choices about how to represent and convey meaning multimodally. Robin (2008) reviews evidence that digital storytelling develops both technical literacy and the deeper narrative thinking that connects personal experience to academic concepts. In practice the most productive digital stories are personal and specific rather than generic summaries of course content. Students who are given licence to make a story rather than a report tend to engage more deeply with the reflective purpose of the task. A common pitfall is over-specifying the format to the point that students produce illustrated essays rather than genuine narratives.",
+84: "Podcast Production asks students to research, script, record, and publish an audio episode on a topic related to their coursework, producing a public or semi-public artefact that demonstrates both subject knowledge and the ability to communicate clearly for a non-specialist audience. The educational rationale is that explaining something in accessible spoken language requires a qualitatively different and deeper understanding than summarising it for an academic reader. Heilesen's (2010) review of podcasting in higher education shows positive effects on engagement, motivation, and the quality of preparation for the subject matter. In practice the scripting and editing stages are where most of the learning happens, and these should be treated as explicit parts of the assessment. A common pitfall is treating the audio production as the primary challenge, which leads students to invest in sound quality while underinvesting in the clarity and accuracy of the content.",
+85: "Gamification adds game mechanics such as points, badges, leaderboards, and achievement levels to learning activities that are not themselves games, creating an external incentive structure designed to increase engagement and motivation. The educational purpose is to make sustained practice and participation more rewarding by providing frequent, visible feedback on progress. Dicheva et al.'s (2015) systematic review finds positive effects on engagement and motivation in many contexts, though effects on deeper learning outcomes are more mixed. In practice gamification works best when the mechanics are aligned with genuine learning behaviours, rewarding evidence of understanding rather than simply participation or completion. A common pitfall is gamification that creates competition without cooperation, which can reduce the willingness to share understanding and help peers, undermining the social dimensions of learning.",
+86: "Serious Games are purpose-designed games in which the primary goal is learning rather than entertainment, placing students inside simulated environments where they make decisions, experience consequences, and develop the reasoning and skills the game was designed to build. The educational rationale is that games create conditions of motivated, iterative practice with immediate feedback that are difficult to replicate through conventional instruction. Shaffer (2006) and Gee (2003) both argue that well-designed games instantiate the principles of effective learning theory without students necessarily experiencing them as instruction. In practice the debrief after a game session is as important as the game itself: the learning embedded in the game experience needs to be made explicit and connected to course concepts. A common pitfall is treating the game as self-sufficient, which means learning remains experiential but not conceptualised.",
+87: "Virtual Labs give students access to simulated laboratory environments where they can conduct experiments, manipulate variables, and observe outcomes without the constraints of physical equipment, materials, or safety concerns. The educational purpose is to provide authentic inquiry experience that would otherwise be inaccessible due to cost, complexity, or risk, and to allow repeated practice with immediate feedback. Mikropoulos and Natsis's (2011) review shows benefits for conceptual understanding and scientific reasoning when virtual labs are used in combination with genuine inquiry tasks rather than as recipe-following exercises. In practice platforms such as Labster and PhET simulations can be used before physical lab sessions to build conceptual understanding, alongside them to extend practice, or after them to consolidate. A common pitfall is using virtual labs as a substitute for physical lab experience where physical experience is available and important, since the sensory and procedural dimensions of real laboratory work cannot be fully replicated digitally.",
+88: "Augmented Reality Activities use mobile devices or AR glasses to overlay digital information onto the physical environment, allowing students to see, interact with, and manipulate virtual objects in real space. The educational purpose is to make invisible or inaccessible phenomena perceptible, for example visualising molecular structures in three dimensions or exploring anatomical layers in context. Bower et al.'s (2014) review of AR in education identifies spatial understanding and contextual learning as the areas of greatest demonstrated benefit. In practice AR activities work best when the spatial or contextual dimension of the AR layer adds something genuinely unavailable in two-dimensional representations. A common pitfall is using AR as a novelty rather than because the format serves the learning outcome: if the content is equally well understood from a diagram or a video, AR is not justified by its cost and technical demands.",
+89: "Collaborative Mind Mapping asks groups to build a shared visual representation of a concept, topic, or problem, connecting ideas with branches and linking related concepts across the map as a whole. The purpose is to develop both individual understanding and collective knowledge organisation, with the negotiation of the map structure driving the learning. Novak and Cañas (2008) situate mind mapping within the theory of meaningful learning, showing that the process of deciding where an idea fits and how it connects to others produces deeper understanding than linear note-taking. In practice digital tools such as Miro and MindMeister enable real-time collaborative mapping, while physical paper maps remain effective for shorter tasks. A common pitfall is maps that grow as collections of labels without meaningful connections. Requiring students to write a relationship label on every connecting line significantly improves the analytical depth of the mapping.",
+90: "Improvisational Theatre Techniques adapt exercises from drama training, such as status games, physicality exercises, and yes-and structures, for use in educational settings to develop communication, empathy, responsiveness, and the capacity to act under uncertainty. The educational purpose is to build the interpersonal and performative competencies that many professional roles require and that conventional instruction rarely develops. Spolin's (1963) foundational work on improvisation and a growing body of applied drama research support its use in teacher education, clinical training, and social work. In practice the exercises need to be carefully scaffolded: students who feel exposed or ridiculed disengage immediately, and trust-building activities at the start are not optional. A common pitfall is treating improvisational exercises as warm-up activities rather than as substantive pedagogical tools, which means they are allocated insufficient time and are not connected explicitly to the learning outcomes they are designed to develop.",
+91: "Structured Problem-Solving Pairs assigns two students alternating roles of solver and coach for a set of problems. The solver thinks aloud while working through each problem; the coach listens, asks clarifying questions, and identifies points where the reasoning seems unclear or incomplete, but does not provide the answer. The educational purpose is to develop both metacognitive awareness, through the think-aloud component, and the diagnostic reasoning skills required to identify where someone else's thinking has gone wrong. Barkley et al. (2014) situate this within cooperative learning research showing that structured dyadic tasks produce better outcomes than unstructured pair work. In practice the coach role needs explicit guidance: students who default to helping by telling are not performing the coaching function. Training the coach to ask what are you trying to do here rather than the answer is before any hint is given significantly improves the quality of the interaction.",
+92: "Expert Panel asks a small group of students who have researched a topic in depth to sit at the front of the room as a panel and field questions from their peers, with the teacher facilitating rather than participating as an expert. The purpose is to develop both deep content knowledge through intensive preparation and the ability to explain, defend, and extend ideas under questioning. Davis (1993) situates the expert panel within a broader argument that placing students in genuine academic roles, rather than simulating them, produces qualitatively different engagement. In practice the preparation needs to be structured: panel members need to know not only their own material but also how it connects to what other panel members have researched. A common pitfall is audiences who are not prepared to ask substantive questions, which leaves the panel performing a summary presentation rather than a genuine intellectual exchange. Assigning audience members specific areas to question in advance produces a more productive session.",
+93: "Research Symposium gives students the experience of presenting their work in progress at an organised peer conference format, with posters or short presentations, peer questions, and formal feedback. The purpose is to develop the communication skills of academic research dissemination while also giving students an authentic external audience for their work. Kinkead (2003) and the broader undergraduate research literature show that presenting at a symposium increases student ownership of their research, deepens their engagement with the work, and develops disciplinary identity. In practice the event design needs to create genuine intellectual exchange rather than a series of performances: discussion time and structured peer feedback are more valuable than polished presentations to passive audiences. A common pitfall is symposia in which students present finished work and receive only polite questions. Framing the event as work in progress and explicitly asking the audience for constructive suggestions produces more substantive engagement.",
+94: "Citizen Science Projects integrate students into real, ongoing research by having them collect, code, or analyse data that contributes to a larger scientific or community knowledge base. The educational purpose is to develop research skills and scientific citizenship by giving students the experience of genuine participation in knowledge production rather than simulated inquiry. Bonney et al.'s (2009) research on citizen science shows benefits for scientific literacy, motivation, and understanding of research methods, particularly when students are informed about how their contributions fit into the larger project. In practice the most important design decision is connecting students' specific contributions to the questions the larger project is investigating, so that the work feels meaningful rather than mechanical. A common pitfall is citizen science activities where students collect data without understanding what question the data is intended to answer.",
+95: "Living Lab engages students with real, unsolved institutional or community problems as design researchers, tasking them with investigating the problem, generating solutions, and communicating recommendations to actual stakeholders. The educational purpose is to develop professional and civic competencies through genuine engagement with problems that matter, producing outcomes that could be implemented rather than submitted and archived. Almirall et al.'s (2012) framework situates living labs within open innovation theory, emphasising the co-creation between students, practitioners, and communities as the mechanism that produces both better solutions and richer learning. In practice the stakeholder relationship is the most complex element to manage: partners need to understand what student involvement can and cannot deliver, and students need to manage the tension between academic rigour and practical responsiveness. A common pitfall is living lab projects that remain conceptual, where students design solutions but have no pathway to implementation or feedback from the actual context.",
+96: "Think-Aloud Protocol asks students to verbalise their reasoning continuously while working through a problem, making internal cognitive processes visible to an observer or partner. The educational purpose is to develop metacognitive awareness by externalising thinking, and to allow teachers or peers to identify exactly where and why a student's reasoning breaks down. Ericsson and Simon's (1993) foundational research on verbal protocols establishes that thinking aloud concurrent with task performance provides valid evidence of the cognitive processes involved. In practice the think-aloud is most productive when the problem is genuinely challenging for the student: if the task is too easy, there is nothing substantive to verbalise. Observers need a specific focus, such as noting where the student pauses, backtracks, or expresses uncertainty, rather than simply listening. A common pitfall is students who narrate what they are doing rather than why, which produces a description of actions rather than an account of reasoning.",
+97: "Scenario Planning asks groups to analyse a complex domain, identify the key uncertainties and driving forces, and construct two to four plausible but divergent future scenarios that represent meaningfully different outcomes. The educational purpose is to develop strategic thinking, tolerance of ambiguity, and the ability to reason rigorously about futures that cannot be predicted with certainty. Schwartz's (1991) framework for scenario planning emphasises that the goal is not to identify the most likely future but to build the mental models needed to recognise and respond to different futures as they emerge. In practice the most common failure mode is scenarios that are too similar or that are simply optimistic and pessimistic versions of the same forecast. Effective scenarios are built around different resolutions of genuine uncertainties rather than different magnitudes of the same outcome. A common pitfall is groups who spend most of the time on the analysis phase and do not develop the scenarios in enough narrative detail to be useful as planning tools.",
+98: "Ethics Case Analysis applies ethical frameworks such as utilitarian reasoning, deontological principles, virtue ethics, or professional codes to the analysis of real or constructed moral dilemmas in a professional context. The educational purpose is to develop the capacity for principled moral reasoning rather than intuitive ethical judgment, and to give students practice in applying frameworks to messy situations where reasonable people disagree. Rest's (1986) four-component model of moral development provides a theoretical foundation, identifying ethical sensitivity, reasoning, motivation, and action as the components that education should develop. In practice the cases need to be genuinely difficult: if the right answer is obvious, students do not need to apply a framework. Cases where different ethical frameworks yield different conclusions are the most educationally productive. A common pitfall is treating ethics case analysis as a comprehension exercise in which students identify which framework applies rather than genuinely reasoning through competing claims.",
+99: "Interdisciplinary Synthesis Tasks ask students to bring concepts, methods, or perspectives from two or more disciplines to bear on a problem that cannot be adequately addressed from within any single discipline. The educational purpose is to develop integrative thinking and the capacity to navigate disciplinary boundaries, which is increasingly important both academically and professionally. Newell's (1994) framework for interdisciplinary inquiry identifies the drawing out of insights from each discipline and the integration of those insights into a more complete understanding as the two core cognitive moves. In practice students need to have sufficient grounding in each relevant discipline before attempting synthesis, otherwise the task produces superficial cross-referencing rather than genuine integration. A common pitfall is assessments that reward the identification of disciplinary connections without requiring students to explain how combining perspectives produces understanding that neither discipline alone could provide.",
+100: "AI-Augmented Seminar incorporates AI tools such as language models directly into structured seminar activity, asking students to use them to generate, challenge, refine, and evaluate ideas in real time rather than treating AI as a tool used outside the classroom. The educational purpose is to develop critical AI literacy alongside disciplinary thinking, equipping students to engage with AI as a thinking partner rather than as an answer machine. Mollick and Mollick (2023) document multiple roles for AI in learning contexts, including generating alternative perspectives, playing devil's advocate, providing worked examples on demand, and acting as a Socratic interlocutor. In practice the seminar needs a clear intellectual task that students cannot simply offload to the AI: the goal is to use AI output as material to think with rather than as a final product. A common pitfall is students who accept AI-generated responses without critical evaluation, which reduces the seminar to a prompt-and-paste exercise rather than a genuine intellectual engagement."
+};
+
+
+const strategies = [
+{"id": 1, "name": "Think-Pair-Share", "desc": "Students think individually, discuss with a partner, then share with the class.", "room": ["Any"], "time": "5–15 min", "groupSize": "Any", "format": ["On campus", "Blended", "Digital"], "materials": "None", "tech": "None", "ai": "Reflection prompts", "tpack": ["PK", "PCK"], "field": ["Any"], "keywords": ["think-pair-share higher education", "cooperative learning discussion technique", "Lyman 1981 active learning", "pair discussion student engagement"], "solo": "Multistructural", "bloom": "Understand"},
+{"id": 2, "name": "Peer instruction", "desc": "Students answer conceptual questions, discuss with peers, then revote using clickers or cards.", "room": ["Lecture hall", "ALC"], "time": "10–20 min", "groupSize": "Any", "format": ["On campus", "Blended"], "materials": "Response cards or clickers", "tech": "Polling tool (optional)", "ai": "Question generation", "tpack": ["TK", "TCK", "TPACK"], "field": ["STEM", "Medicine"], "keywords": ["peer instruction higher education", "Mazur peer instruction physics", "conceptual questions clickers", "peer discussion misconceptions STEM"], "solo": "Relational", "bloom": "Analyse"},
+{"id": 3, "name": "Flipped classroom", "desc": "Pre-class material replaces lecture; class time used for active work.", "room": ["Any"], "time": "Full session", "groupSize": "Any", "format": ["Blended", "Digital"], "materials": "Pre-recorded lecture", "tech": "LMS, video platform", "ai": "Content creation, quizzes", "tpack": ["TK", "TCK", "TPACK"], "field": ["Any"], "keywords": ["flipped classroom higher education", "inverted classroom student outcomes", "pre-class video active learning", "flipped learning engagement"], "solo": "Relational", "bloom": "Apply"},
+{"id": 4, "name": "Problem-based learning (PBL)", "desc": "Students work on complex real-world problems over several sessions.", "room": ["Seminar", "ALC"], "time": "Multi-session", "groupSize": "5–20", "format": ["On campus", "Blended"], "materials": "Case materials", "tech": "LMS", "ai": "Problem framing, research", "tpack": ["PK", "PCK", "TPK"], "field": ["Medicine", "Law", "Engineering"], "keywords": ["problem-based learning higher education", "PBL student-centred learning", "Hmelo-Silver problem-based", "authentic problems student agency"], "solo": "Extended abstract", "bloom": "Analyse"},
+{"id": 5, "name": "Case-based learning", "desc": "Analysis of rich real or fictional cases to develop professional judgement.", "room": ["Seminar", "ALC", "Lecture hall"], "time": "45–90 min", "groupSize": "5–40", "format": ["On campus", "Blended", "Digital"], "materials": "Written case", "tech": "LMS (optional)", "ai": "Case generation, analysis", "tpack": ["PK", "PCK"], "field": ["Business", "Law", "Medicine", "Social work"], "keywords": ["case-based learning higher education", "case study pedagogy professional education", "Herreid case method", "case analysis student reasoning"], "solo": "Relational", "bloom": "Evaluate"},
+{"id": 6, "name": "Jigsaw", "desc": "Students become experts on one part of content, then teach peers in mixed groups.", "room": ["Seminar", "ALC"], "time": "45–90 min", "groupSize": "10–40", "format": ["On campus"], "materials": "Different reading sets", "tech": "None", "ai": "Content summaries", "tpack": ["PK", "PCK"], "field": ["Any"], "keywords": ["jigsaw cooperative learning", "Aronson jigsaw classroom", "expert group peer teaching", "cooperative learning achievement higher education"], "solo": "Relational", "bloom": "Understand"},
+{"id": 7, "name": "Team-Based learning (TBL)", "desc": "Structured team work with individual and group readiness assurance tests.", "room": ["Lecture hall", "ALC"], "time": "Full session", "groupSize": "20–200", "format": ["On campus", "Blended"], "materials": "IRAT/GRAT cards", "tech": "Polling tool", "ai": "Application case design", "tpack": ["PK", "PCK", "TCK"], "field": ["Medicine", "Business", "Any"], "keywords": ["team-based learning higher education", "TBL readiness assurance test", "Michaelsen team-based learning", "structured team learning university"], "solo": "Relational", "bloom": "Apply"},
+{"id": 8, "name": "Gallery walk", "desc": "Students move around the room to examine and respond to posted work or prompts.", "room": ["Seminar", "ALC", "Lab"], "time": "20–45 min", "groupSize": "10–40", "format": ["On campus"], "materials": "Posters, sticky notes, markers", "tech": "None", "ai": "Prompt generation", "tpack": ["PK", "PCK"], "field": ["Any"], "keywords": ["gallery walk active learning", "collaborative gallery walk classroom", "student work display discussion", "movement-based learning classroom"], "solo": "Multistructural", "bloom": "Analyse"},
+{"id": 9, "name": "Muddiest point", "desc": "Students write the most confusing point at the end of a session.", "room": ["Any"], "time": "2–5 min", "groupSize": "Any", "format": ["On campus", "Blended", "Digital"], "materials": "Paper or online form", "tech": "LMS or forms", "ai": "Response categorisation", "tpack": ["PK"], "field": ["Any"], "keywords": ["muddiest point formative assessment", "Angelo Cross classroom assessment techniques", "one-minute reflection student confusion", "CAT formative feedback lecture"], "solo": "Unistructural", "bloom": "Understand"},
+{"id": 10, "name": "One-minute paper", "desc": "Short written reflection at the end of class on key learning.", "room": ["Any"], "time": "2–5 min", "groupSize": "Any", "format": ["On campus", "Blended", "Digital"], "materials": "Paper or form", "tech": "LMS (optional)", "ai": "Feedback synthesis", "tpack": ["PK"], "field": ["Any"], "keywords": ["one-minute paper higher education", "classroom assessment technique reflection", "Angelo Cross CATs", "end-of-class reflection formative"], "solo": "Multistructural", "bloom": "Understand"},
+{"id": 11, "name": "Minute paper with peer review", "desc": "One-minute papers exchanged and reviewed by peers.", "room": ["Any"], "time": "5–10 min", "groupSize": "Any", "format": ["On campus", "Blended"], "materials": "Paper or form", "tech": "LMS", "ai": "Feedback framing", "tpack": ["PK", "PCK"], "field": ["Any"], "keywords": ["peer review writing higher education", "peer feedback learning outcomes", "peer response writing process", "formative peer assessment writing"], "solo": "Relational", "bloom": "Evaluate"},
+{"id": 12, "name": "Socratic seminar", "desc": "Structured discussion guided by deep questioning of a shared text.", "room": ["Seminar"], "time": "45–90 min", "groupSize": "10–25", "format": ["On campus"], "materials": "Shared text", "tech": "None", "ai": "Question generation", "tpack": ["PK", "CK"], "field": ["Humanities", "Law", "Philosophy"], "keywords": ["Socratic seminar discussion", "text-based discussion higher education", "Socratic questioning deep learning", "seminar dialogue critical thinking"], "solo": "Extended abstract", "bloom": "Evaluate"},
+{"id": 13, "name": "Fishbowl discussion", "desc": "Inner group discusses while outer group observes; roles rotate.", "room": ["Seminar", "ALC"], "time": "30–60 min", "groupSize": "10–30", "format": ["On campus"], "materials": "None", "tech": "None", "ai": "Scenario prompts", "tpack": ["PK"], "field": ["Any"], "keywords": ["fishbowl discussion higher education", "inner outer circle discussion technique", "structured observation peer dialogue", "Brookfield discussion teaching"], "solo": "Relational", "bloom": "Evaluate"},
+{"id": 14, "name": "Debate", "desc": "Structured argumentation where teams defend assigned positions.", "room": ["Seminar", "Lecture hall"], "time": "45–90 min", "groupSize": "10–60", "format": ["On campus", "Blended"], "materials": "Preparation materials", "tech": "None", "ai": "Argument mapping", "tpack": ["PK", "CK", "PCK"], "field": ["Law", "Social sciences", "Humanities"], "keywords": ["debate pedagogy higher education", "structured debate student learning", "argumentation academic achievement", "debate critical thinking university"], "solo": "Extended abstract", "bloom": "Evaluate"},
+{"id": 15, "name": "Concept mapping", "desc": "Students visually map relationships between concepts.", "room": ["Any"], "time": "20–45 min", "groupSize": "1–6", "format": ["On campus", "Blended", "Digital"], "materials": "Paper or software", "tech": "Miro, Coggle (optional)", "ai": "Concept identification", "tpack": ["CK", "PCK", "TCK"], "field": ["Any"], "keywords": ["concept mapping learning", "Novak concept map", "visual knowledge organisation higher education", "concept mapping meaningful learning"], "solo": "Relational", "bloom": "Analyse"},
+{"id": 16, "name": "Role play", "desc": "Students take on assigned roles to explore situations or problems.", "room": ["Seminar", "Lab"], "time": "30–60 min", "groupSize": "5–30", "format": ["On campus", "Digital"], "materials": "Role cards", "tech": "None or video conferencing", "ai": "Scenario and role generation", "tpack": ["PK", "CK"], "field": ["Medicine", "Social work", "Business", "Law"], "keywords": ["role play higher education", "simulation role play professional learning", "perspective-taking experiential learning", "role play empathy education"], "solo": "Relational", "bloom": "Analyse"},
+{"id": 17, "name": "Simulation", "desc": "Students work through a realistic scenario mimicking professional practice.", "room": ["Lab", "ALC"], "time": "60–180 min", "groupSize": "5–20", "format": ["On campus", "Digital"], "materials": "Simulation materials or software", "tech": "Simulation platform", "ai": "Scenario generation, debriefing", "tpack": ["TK", "TCK", "TPACK"], "field": ["Medicine", "Engineering", "Teacher education"], "keywords": ["simulation-based learning higher education", "clinical simulation professional education", "high-fidelity simulation learning", "Issenberg simulation medical education"], "solo": "Relational", "bloom": "Apply"},
+{"id": 18, "name": "Project-based learning", "desc": "Sustained inquiry into a real-world challenge resulting in a public product.", "room": ["ALC", "Lab", "Any"], "time": "Multi-week", "groupSize": "3–8", "format": ["On campus", "Blended", "Digital"], "materials": "Project materials", "tech": "Collaboration tools, LMS", "ai": "Research support, feedback", "tpack": ["PK", "TK", "TPK", "TPACK"], "field": ["Engineering", "Design", "Any"], "keywords": ["project-based learning higher education", "sustained inquiry real-world project", "PBL university student outcomes", "design challenge project learning"], "solo": "Extended abstract", "bloom": "Create"},
+{"id": 19, "name": "Design thinking workshop", "desc": "Students iterate through empathise, define, ideate, prototype, and test stages.", "room": ["ALC", "Lab"], "time": "90–180 min", "groupSize": "5–20", "format": ["On campus", "Blended"], "materials": "Post-its, markers, prototyping materials", "tech": "Miro (optional)", "ai": "Ideation, user research", "tpack": ["PK", "TK", "TPK"], "field": ["Design", "Business", "Engineering", "Social work"], "keywords": ["design thinking education", "design thinking pedagogy university", "Stanford d.school methodology education", "empathise ideate prototype learning"], "solo": "Extended abstract", "bloom": "Create"},
+{"id": 20, "name": "Structured academic controversy", "desc": "Students argue both sides of an issue before seeking consensus.", "room": ["Seminar", "ALC"], "time": "45–90 min", "groupSize": "4–20", "format": ["On campus", "Blended"], "materials": "Position cards", "tech": "None", "ai": "Counter-argument generation", "tpack": ["PK", "CK", "PCK"], "field": ["Any"], "keywords": ["structured academic controversy", "Johnson Johnson cooperative controversy", "argue both sides consensus learning", "structured controversy higher education"], "solo": "Extended abstract", "bloom": "Evaluate"},
+{"id": 21, "name": "Collaborative note-taking", "desc": "Students co-create notes in shared documents during or after a lecture.", "room": ["Any"], "time": "During class", "groupSize": "Any", "format": ["On campus", "Blended", "Digital"], "materials": "Shared document", "tech": "Google Docs, Padlet", "ai": "Gap identification, summarisation", "tpack": ["TK", "TCK", "TPK"], "field": ["Any"], "keywords": ["collaborative note-taking", "shared notes student learning", "co-created notes lecture", "collaborative annotation note-taking higher education"], "solo": "Multistructural", "bloom": "Remember"},
+{"id": 22, "name": "Polling / audience response", "desc": "Real-time questions sent to all students; responses discussed.", "room": ["Lecture hall", "ALC", "Any"], "time": "2–10 min", "groupSize": "Any", "format": ["On campus", "Blended", "Digital"], "materials": "None", "tech": "Mentimeter, Kahoot, Poll Everywhere", "ai": "Question generation", "tpack": ["TK", "TCK", "TPACK"], "field": ["Any"], "keywords": ["audience response system higher education", "classroom polling clickers", "Caldwell student response systems", "real-time polling engagement"], "solo": "Unistructural", "bloom": "Remember"},
+{"id": 23, "name": "Exit ticket", "desc": "Brief formative task completed before leaving class.", "room": ["Any"], "time": "2–5 min", "groupSize": "Any", "format": ["On campus", "Blended", "Digital"], "materials": "Paper or form", "tech": "LMS, forms", "ai": "Prompt design", "tpack": ["PK"], "field": ["Any"], "keywords": ["exit ticket formative assessment", "end-of-class check understanding", "Fisher Frey checking for understanding", "exit slip student learning"], "solo": "Unistructural", "bloom": "Understand"},
+{"id": 24, "name": "Carousel brainstorming", "desc": "Groups rotate between posters adding ideas to each prompt.", "room": ["Seminar", "ALC"], "time": "20–40 min", "groupSize": "10–40", "format": ["On campus"], "materials": "Posters, markers", "tech": "None", "ai": "Prompt generation", "tpack": ["PK"], "field": ["Any"], "keywords": ["carousel brainstorming", "rotating stations brainstorming activity", "group brainstorm poster rotation", "collaborative ideation classroom"], "solo": "Multistructural", "bloom": "Create"},
+{"id": 25, "name": "Reciprocal teaching", "desc": "Students take turns leading discussion using predict, clarify, question, summarise.", "room": ["Seminar", "ALC"], "time": "30–60 min", "groupSize": "3–8", "format": ["On campus", "Blended"], "materials": "Text", "tech": "None", "ai": "Discussion scaffolding", "tpack": ["PK", "PCK"], "field": ["Humanities", "Social sciences", "Any"], "keywords": ["reciprocal teaching higher education", "Palincsar Brown reciprocal teaching", "predict clarify question summarise", "reading comprehension strategy instruction"], "solo": "Relational", "bloom": "Understand"},
+{"id": 26, "name": "Inquiry-based learning", "desc": "Students formulate and investigate their own research questions.", "room": ["Lab", "ALC", "Any"], "time": "Multi-session", "groupSize": "1–6", "format": ["On campus", "Blended", "Digital"], "materials": "Library access, datasets", "tech": "LMS, research tools", "ai": "Literature search, question framing", "tpack": ["PK", "CK", "PCK", "TPACK"], "field": ["STEM", "Social sciences", "Humanities"], "keywords": ["inquiry-based learning higher education", "student-generated research questions", "guided inquiry university", "inquiry learning science education"], "solo": "Extended abstract", "bloom": "Create"},
+{"id": 27, "name": "Learning cells", "desc": "Pairs alternate asking and answering questions on shared material.", "room": ["Any"], "time": "10–20 min", "groupSize": "2", "format": ["On campus", "Blended"], "materials": "Shared text", "tech": "None", "ai": "Question banks", "tpack": ["PK", "PCK"], "field": ["Any"], "keywords": ["learning cells pairs alternating questions", "Goldschmid learning cells dyadic", "pair question-answer learning", "dyadic instruction higher education"], "solo": "Relational", "bloom": "Understand"},
+{"id": 28, "name": "Collaborative problem solving", "desc": "Small groups solve discipline-specific problems together.", "room": ["Any"], "time": "20–60 min", "groupSize": "3–6", "format": ["On campus", "Blended", "Digital"], "materials": "Problem sets", "tech": "Shared whiteboard (optional)", "ai": "Hint generation, worked examples", "tpack": ["PK", "CK", "PCK", "TCK"], "field": ["STEM", "Medicine", "Economics"], "keywords": ["collaborative problem solving higher education", "group problem solving STEM", "cooperative problem solving physics", "Heller cooperative grouping"], "solo": "Relational", "bloom": "Apply"},
+{"id": 29, "name": "POGIL", "desc": "Teams use structured activities to construct understanding of concepts through process-oriented guided inquiry.", "room": ["Lab", "ALC", "Seminar"], "time": "45–90 min", "groupSize": "3–5", "format": ["On campus"], "materials": "POGIL activity worksheets", "tech": "None", "ai": "Activity design support", "tpack": ["PK", "CK", "PCK"], "field": ["Chemistry", "Biology", "STEM"], "keywords": ["POGIL process oriented guided inquiry", "POGIL higher education chemistry", "guided inquiry learning cycle", "process skills POGIL STEM"], "solo": "Relational", "bloom": "Analyse"},
+{"id": 30, "name": "Socratic questioning", "desc": "Instructor uses probing questions to guide students to deeper understanding.", "room": ["Any"], "time": "Ongoing", "groupSize": "Any", "format": ["On campus", "Blended", "Digital"], "materials": "None", "tech": "None", "ai": "Question generation", "tpack": ["PK", "CK"], "field": ["Any"], "keywords": ["Socratic questioning teaching", "probing questions higher order thinking", "Socratic method classroom", "questioning technique deep understanding"], "solo": "Relational", "bloom": "Analyse"},
+{"id": 31, "name": "Student-generated questions", "desc": "Students write questions for upcoming exams or discussions.", "room": ["Any"], "time": "10–20 min", "groupSize": "Any", "format": ["On campus", "Blended", "Digital"], "materials": "None", "tech": "LMS, forms", "ai": "Question quality evaluation", "tpack": ["PK", "CK"], "field": ["Any"], "keywords": ["student-generated questions higher education", "learner-generated questions engagement", "student question formulation", "King student questioning academic achievement"], "solo": "Relational", "bloom": "Create"},
+{"id": 32, "name": "Peer teaching", "desc": "Students prepare and deliver short lessons to classmates.", "room": ["Seminar", "Lecture hall"], "time": "15–45 min", "groupSize": "5–40", "format": ["On campus", "Blended"], "materials": "Preparation time", "tech": "Slides (optional)", "ai": "Content accuracy check", "tpack": ["CK", "PCK"], "field": ["Any"], "keywords": ["peer teaching higher education", "near-peer instruction learning", "Topping peer tutoring outcomes", "students teaching students achievement"], "solo": "Extended abstract", "bloom": "Evaluate"},
+{"id": 33, "name": "Peer assessment", "desc": "Students evaluate each other's work using shared criteria.", "room": ["Any"], "time": "20–45 min", "groupSize": "Any", "format": ["On campus", "Blended", "Digital"], "materials": "Rubric", "tech": "LMS peer review tools", "ai": "Rubric generation, feedback synthesis", "tpack": ["PK", "TK", "TPK"], "field": ["Any"], "keywords": ["peer assessment higher education", "Topping peer assessment outcomes", "peer feedback quality learning", "evaluative judgement peer marking"], "solo": "Relational", "bloom": "Evaluate"},
+{"id": 34, "name": "Self-Assessment", "desc": "Students reflect on their own learning and performance against criteria.", "room": ["Any"], "time": "10–20 min", "groupSize": "Individual", "format": ["On campus", "Blended", "Digital"], "materials": "Rubric or checklist", "tech": "LMS", "ai": "Reflection prompts, gap analysis", "tpack": ["PK"], "field": ["Any"], "keywords": ["self-assessment higher education", "Boud self-assessment learning", "student self-regulation reflection", "self-evaluation academic performance"], "solo": "Relational", "bloom": "Evaluate"},
+{"id": 35, "name": "Portfolio", "desc": "Students curate artefacts of their learning over time.", "room": ["Any"], "time": "Ongoing", "groupSize": "Individual", "format": ["On campus", "Blended", "Digital"], "materials": "Portfolio platform or folder", "tech": "e-Portfolio system, LMS", "ai": "Reflection support, curation", "tpack": ["PK", "TK", "TPK"], "field": ["Teacher education", "Arts", "Any"], "keywords": ["portfolio assessment higher education", "student portfolio reflection", "ePortfolio learning outcomes", "portfolio curating learning artefacts"], "solo": "Extended abstract", "bloom": "Evaluate"},
+{"id": 36, "name": "Reflective journaling", "desc": "Regular written reflections on learning and experience.", "room": ["Any"], "time": "10–20 min", "groupSize": "Individual", "format": ["On campus", "Blended", "Digital"], "materials": "Journal or digital tool", "tech": "LMS blog", "ai": "Reflection prompts", "tpack": ["PK"], "field": ["Teacher education", "Social work", "Nursing"], "keywords": ["reflective journaling higher education", "Moon reflective practice writing", "learning journal professional development", "reflective writing student learning"], "solo": "Relational", "bloom": "Analyse"},
+{"id": 37, "name": "Learning logs", "desc": "Students keep a running record of what they have learned and questions arising.", "room": ["Any"], "time": "5–10 min", "groupSize": "Individual", "format": ["On campus", "Blended", "Digital"], "materials": "Notebook or LMS", "tech": "LMS", "ai": "Prompt generation", "tpack": ["PK"], "field": ["Any"], "keywords": ["learning logs higher education", "student learning log metacognition", "reflective record course learning", "Angelo Cross classroom assessment"], "solo": "Multistructural", "bloom": "Remember"},
+{"id": 38, "name": "Structured controversy with role cards", "desc": "Debate structure with assigned expert roles and deliberation phase.", "room": ["Seminar"], "time": "60–90 min", "groupSize": "10–24", "format": ["On campus", "Blended"], "materials": "Role cards, readings", "tech": "None", "ai": "Role preparation", "tpack": ["PK", "CK"], "field": ["Law", "Ethics", "Social sciences"], "keywords": ["structured controversy role cards", "expert role debate deliberation", "Johnson Johnson structured controversy", "academic controversy cooperative learning"], "solo": "Extended abstract", "bloom": "Evaluate"},
+{"id": 39, "name": "Muddiest point with peer response", "desc": "Students write confusions, then peers respond before instructor clarifies.", "room": ["Any"], "time": "5–15 min", "groupSize": "Any", "format": ["On campus", "Blended", "Digital"], "materials": "Paper or LMS", "tech": "LMS discussion", "ai": "Categorising misconceptions", "tpack": ["PK", "TK", "TPK"], "field": ["Any"], "keywords": ["muddiest point peer response", "peer clarification misconception", "muddiest point cooperative learning", "formative assessment peer discussion"], "solo": "Relational", "bloom": "Understand"},
+{"id": 40, "name": "Minute thesis", "desc": "Students articulate the thesis of their project in under 60 seconds.", "room": ["Any"], "time": "5–10 min", "groupSize": "Any", "format": ["On campus", "Blended"], "materials": "None", "tech": "None", "ai": "Argument clarity feedback", "tpack": ["CK", "PK"], "field": ["Humanities", "Social sciences", "Any"], "keywords": ["three-minute thesis academic presentation", "oral thesis defence summary", "concise argument presentation university", "minute thesis academic writing"], "solo": "Relational", "bloom": "Evaluate"},
+{"id": 41, "name": "Flipped small-group discussion", "desc": "Pre-class video or text; class time for small-group discussion only.", "room": ["Seminar", "ALC"], "time": "45–60 min", "groupSize": "10–30", "format": ["Blended", "On campus"], "materials": "Pre-class video or reading", "tech": "LMS, video platform", "ai": "Video summary, discussion prompts", "tpack": ["TK", "TCK", "TPK", "TPACK"], "field": ["Any"], "keywords": ["flipped classroom small group discussion", "pre-class preparation in-class discussion", "flipped learning seminar", "blended learning discussion pedagogy"], "solo": "Relational", "bloom": "Analyse"},
+{"id": 42, "name": "Interactive lecture", "desc": "Short lecture segments interrupted by questions, polls, or brief pair tasks.", "room": ["Lecture hall", "ALC"], "time": "45–90 min", "groupSize": "40–400+", "format": ["On campus", "Blended"], "materials": "None", "tech": "Polling tool", "ai": "Question generation", "tpack": ["PK", "TK", "TCK", "TPACK"], "field": ["Any"], "keywords": ["interactive lecture higher education", "active learning large class", "Steinert Snell interactive lecturing", "lecture interruption active learning"], "solo": "Multistructural", "bloom": "Understand"},
+{"id": 43, "name": "STAD", "desc": "Heterogeneous teams study together then take individual quizzes; team scores pooled. (Student Teams Achievement Divisions)", "room": ["Any"], "time": "Multi-session", "groupSize": "Any", "format": ["On campus", "Blended"], "materials": "Quiz materials", "tech": "LMS", "ai": "Quiz generation", "tpack": ["PK", "PCK"], "field": ["Any"], "keywords": ["STAD cooperative learning", "student teams achievement divisions", "Slavin cooperative learning achievement", "team quiz cooperative structure"], "solo": "Multistructural", "bloom": "Remember"},
+{"id": 44, "name": "Numbered heads together", "desc": "Groups discuss a question; one randomly numbered student reports.", "room": ["Any"], "time": "5–15 min", "groupSize": "Any", "format": ["On campus"], "materials": "None", "tech": "Random number tool", "ai": "Question design", "tpack": ["PK"], "field": ["Any"], "keywords": ["numbered heads together cooperative", "Kagan cooperative learning structure", "random reporting group accountability", "cooperative structure classroom"], "solo": "Multistructural", "bloom": "Remember"},
+{"id": 45, "name": "Snowball discussion", "desc": "Ideas generated individually, then shared in pairs, fours, and finally whole group.", "room": ["Any"], "time": "15–30 min", "groupSize": "Any", "format": ["On campus", "Blended"], "materials": "None", "tech": "None", "ai": "Facilitating synthesis", "tpack": ["PK"], "field": ["Any"], "keywords": ["snowball discussion group work", "think pair group share", "expanding discussion groups", "collaborative discussion progressive groups"], "solo": "Relational", "bloom": "Analyse"},
+{"id": 46, "name": "Think-Write-Pair-Share", "desc": "Think-Pair-Share with an individual writing step before discussion.", "room": ["Any"], "time": "10–20 min", "groupSize": "Any", "format": ["On campus", "Blended", "Digital"], "materials": "Paper or LMS", "tech": "None", "ai": "Writing prompt generation", "tpack": ["PK", "PCK"], "field": ["Any"], "keywords": ["think-write-pair-share", "individual writing before discussion", "written reflection partner discussion", "think pair share variation writing"], "solo": "Relational", "bloom": "Understand"},
+{"id": 47, "name": "Collaborative concept testing", "desc": "Groups discuss and vote on best answer to conceptual dilemmas before class review.", "room": ["Lecture hall", "ALC"], "time": "10–20 min", "groupSize": "Any", "format": ["On campus", "Blended"], "materials": "Concept questions", "tech": "Polling tool", "ai": "Dilemma generation", "tpack": ["TK", "TCK", "TPACK"], "field": ["STEM", "Medicine"], "keywords": ["collaborative concept testing", "peer instruction concept test", "group concept check clickers", "conceptual understanding peer discussion"], "solo": "Relational", "bloom": "Analyse"},
+{"id": 48, "name": "World café", "desc": "Rotating small-group conversations build collective knowledge across tables.", "room": ["ALC", "Seminar", "Large space"], "time": "60–120 min", "groupSize": "20–100", "format": ["On campus"], "materials": "Table paper, markers", "tech": "None", "ai": "Conversation prompt design", "tpack": ["PK", "PCK"], "field": ["Any"], "keywords": ["world café dialogue method", "world café higher education", "rotating dialogue table discussion", "Brown Isaacs world café pedagogy"], "solo": "Extended abstract", "bloom": "Create"},
+{"id": 49, "name": "Fishbowl with rotating inner ring", "desc": "Structured discussion where outer observers rotate into inner ring.", "room": ["Seminar", "ALC"], "time": "45–75 min", "groupSize": "10–30", "format": ["On campus"], "materials": "None", "tech": "None", "ai": "Prompt generation", "tpack": ["PK", "CK"], "field": ["Any"], "keywords": ["fishbowl rotating inner ring", "fishbowl variation observer role", "structured dialogue observation", "discussion protocol inner outer circle"], "solo": "Relational", "bloom": "Evaluate"},
+{"id": 50, "name": "Problem solving in context", "desc": "Problems embedded in authentic professional scenarios.", "room": ["Seminar", "Lab", "ALC"], "time": "30–60 min", "groupSize": "3–8", "format": ["On campus", "Blended"], "materials": "Scenario cards", "tech": "LMS", "ai": "Scenario generation", "tpack": ["PK", "CK", "PCK"], "field": ["Engineering", "Medicine", "Law"], "keywords": ["contextual problem solving", "situated problem solving higher education", "authentic context discipline problems", "problem solving real-world application"], "solo": "Relational", "bloom": "Apply"},
+{"id": 51, "name": "Analogical reasoning tasks", "desc": "Students map structural relationships between a known domain and new content.", "room": ["Any"], "time": "15–30 min", "groupSize": "1–4", "format": ["On campus", "Blended", "Digital"], "materials": "Analogy templates", "tech": "None", "ai": "Analogy generation", "tpack": ["CK", "PCK"], "field": ["STEM", "Humanities", "Any"], "keywords": ["analogical reasoning instruction", "Gentner analogy learning", "analogy-based learning higher education", "structural mapping knowledge transfer"], "solo": "Relational", "bloom": "Analyse"},
+{"id": 52, "name": "Worked example analysis", "desc": "Students study expert solutions and identify principles used.", "room": ["Any"], "time": "20–40 min", "groupSize": "1–4", "format": ["On campus", "Blended", "Digital"], "materials": "Worked examples", "tech": "None", "ai": "Example generation, error injection", "tpack": ["CK", "PCK", "TK"], "field": ["STEM", "Accounting", "Law"], "keywords": ["worked example learning", "Sweller cognitive load worked examples", "example-based learning novice students", "worked examples problem solving expertise"], "solo": "Multistructural", "bloom": "Understand"},
+{"id": 53, "name": "Interleaved practice", "desc": "Mixed problem types across topics rather than blocked practice.", "room": ["Any"], "time": "20–45 min", "groupSize": "Individual", "format": ["On campus", "Blended", "Digital"], "materials": "Mixed problem sets", "tech": "LMS or paper", "ai": "Problem set generation", "tpack": ["CK", "PK", "PCK"], "field": ["STEM", "Medicine", "Any"], "keywords": ["interleaved practice learning", "interleaving spacing retrieval higher education", "mixed practice retention", "interleaved versus blocked practice"], "solo": "Relational", "bloom": "Apply"},
+{"id": 54, "name": "Retrieval practice / low-stakes quizzing", "desc": "Frequent short quizzes to strengthen memory retrieval.", "room": ["Any"], "time": "5–15 min", "groupSize": "Any", "format": ["On campus", "Blended", "Digital"], "materials": "Quiz cards or forms", "tech": "LMS, Kahoot, Anki", "ai": "Quiz generation", "tpack": ["TK", "TCK", "TPACK"], "field": ["Any"], "keywords": ["retrieval practice higher education", "testing effect learning", "Roediger Karpicke retrieval", "low-stakes quizzing long-term retention"], "solo": "Multistructural", "bloom": "Remember"},
+{"id": 55, "name": "Spaced repetition system", "desc": "Flashcard-style review scheduled across time to exploit the spacing effect.", "room": ["Any"], "time": "5–20 min", "groupSize": "Individual", "format": ["Digital", "Blended"], "materials": "Flashcard platform", "tech": "Anki, Quizlet", "ai": "Card generation", "tpack": ["TK", "TCK", "TPACK"], "field": ["Medicine", "Language", "Any"], "keywords": ["spaced repetition learning", "distributed practice memory retention", "Cepeda spacing effect education", "spaced learning higher education"], "solo": "Multistructural", "bloom": "Remember"},
+{"id": 56, "name": "Elaborative interrogation", "desc": "Students generate explanations for why facts are true.", "room": ["Any"], "time": "10–20 min", "groupSize": "Individual or pair", "format": ["On campus", "Blended", "Digital"], "materials": "Facts or propositions", "tech": "None", "ai": "Prompt generation", "tpack": ["CK", "PK"], "field": ["Any"], "keywords": ["elaborative interrogation why questions", "Dunlosky effective learning strategies", "elaboration learning technique", "self-explanation elaboration retention"], "solo": "Relational", "bloom": "Understand"},
+{"id": 57, "name": "Anticipation guide", "desc": "Students confirm or disconfirm beliefs before and after instruction.", "room": ["Any"], "time": "10–15 min", "groupSize": "Individual", "format": ["On campus", "Blended", "Digital"], "materials": "Guide sheet", "tech": "LMS", "ai": "Statement generation", "tpack": ["PK", "CK"], "field": ["Any"], "keywords": ["anticipation guide reading strategy", "Duffelmeyer anticipation guide", "pre-reading prediction comprehension", "activating prior knowledge reading"], "solo": "Multistructural", "bloom": "Understand"},
+{"id": 58, "name": "KWL chart", "desc": "Students track what they Know, Want to know, and have Learned.", "room": ["Any"], "time": "5–15 min", "groupSize": "Any", "format": ["On campus", "Blended", "Digital"], "materials": "KWL template", "tech": "LMS or paper", "ai": "Question generation from W column", "tpack": ["PK"], "field": ["Any"], "keywords": ["KWL chart learning strategy", "Ogle KWL know want learn", "prior knowledge activation comprehension", "KWL reading strategy higher education"], "solo": "Multistructural", "bloom": "Remember"},
+{"id": 59, "name": "Cognitive apprenticeship", "desc": "Expert modelling with scaffolded coaching then fading support.", "room": ["Lab", "Clinic", "Studio"], "time": "Full session+", "groupSize": "1–10", "format": ["On campus"], "materials": "Authentic tasks", "tech": "None", "ai": "Scaffolded prompts", "tpack": ["CK", "PK", "PCK"], "field": ["Medicine", "Teacher education", "Vocational"], "keywords": ["cognitive apprenticeship higher education", "Collins Brown Newman cognitive apprenticeship", "modelling scaffolding coaching fading", "expert practice making visible"], "solo": "Relational", "bloom": "Apply"},
+{"id": 60, "name": "Constructive alignment workshop", "desc": "Students co-analyse curriculum alignment between ILOs, activities, and assessment.", "room": ["Seminar", "ALC"], "time": "45–90 min", "groupSize": "10–30", "format": ["On campus", "Blended"], "materials": "Curriculum documents", "tech": "Shared documents", "ai": "Gap analysis", "tpack": ["PK", "PCK"], "field": ["Teacher education", "Any"], "keywords": ["constructive alignment higher education", "Biggs Tang constructive alignment", "learning outcomes assessment alignment", "course design aligned teaching"], "solo": "Relational", "bloom": "Analyse"},
+{"id": 61, "name": "Epistemic games", "desc": "Role-based inquiry where students adopt professional epistemic practices.", "room": ["ALC", "Lab"], "time": "Multi-session", "groupSize": "5–15", "format": ["On campus", "Digital"], "materials": "Game materials or platform", "tech": "LMS, simulation", "ai": "Professional scenario design", "tpack": ["CK", "PK", "PCK", "TPACK"], "field": ["STEM", "Social sciences"], "keywords": ["epistemic games education", "Shaffer epistemic games", "professional practice simulation games", "disciplinary epistemology learning"], "solo": "Extended abstract", "bloom": "Evaluate"},
+{"id": 62, "name": "Studio critique", "desc": "Student work displayed and discussed collectively in structured critique.", "room": ["Studio", "Lab", "ALC"], "time": "45–90 min", "groupSize": "5–25", "format": ["On campus", "Digital"], "materials": "Completed work", "tech": "Display tools, projector", "ai": "Critique scaffold", "tpack": ["CK", "PK", "PCK"], "field": ["Arts", "Architecture", "Design"], "keywords": ["studio critique design education", "Schön reflective practitioner", "desk crit design learning", "studio-based learning peer critique"], "solo": "Relational", "bloom": "Evaluate"},
+{"id": 63, "name": "Collaborative writing", "desc": "Groups co-author a text using shared document tools.", "room": ["Any"], "time": "45–120 min", "groupSize": "2–6", "format": ["On campus", "Blended", "Digital"], "materials": "None", "tech": "Google Docs, LMS", "ai": "Drafting support, revision feedback", "tpack": ["TK", "TCK", "TPACK"], "field": ["Humanities", "Social sciences", "Any"], "keywords": ["collaborative writing higher education", "Storch collaborative writing outcomes", "co-authoring academic writing", "joint writing task learning"], "solo": "Relational", "bloom": "Create"},
+{"id": 64, "name": "Peer writing groups", "desc": "Students meet regularly to give and receive feedback on writing in progress.", "room": ["Seminar", "ALC"], "time": "45–60 min", "groupSize": "3–6", "format": ["On campus", "Blended", "Digital"], "materials": "Draft texts", "tech": "LMS or Google Docs", "ai": "Feedback framing, style suggestions", "tpack": ["PK", "TK", "TPK"], "field": ["Humanities", "Social sciences", "Any"], "keywords": ["peer writing groups", "writing workshop higher education", "peer response writing Elbow", "collaborative writing feedback university"], "solo": "Relational", "bloom": "Evaluate"},
+{"id": 65, "name": "Collaborative annotation", "desc": "Students annotate shared texts with comments and questions.", "room": ["Any"], "time": "20–40 min", "groupSize": "Any", "format": ["On campus", "Blended", "Digital"], "materials": "Annotated text or platform", "tech": "Hypothesis, Perusall", "ai": "Discussion prompt generation", "tpack": ["TK", "TCK", "TPACK"], "field": ["Humanities", "Law", "Social sciences"], "keywords": ["social annotation higher education", "collaborative annotation Perusall Hypothesis", "digital annotation peer reading", "Miller social annotation active learning"], "solo": "Relational", "bloom": "Analyse"},
+{"id": 66, "name": "Data literacy exercise", "desc": "Students work with real datasets to draw conclusions and critique methods.", "room": ["Lab", "ALC", "Computer room"], "time": "60–120 min", "groupSize": "1–4", "format": ["On campus", "Blended", "Digital"], "materials": "Dataset", "tech": "Excel, R, SPSS, Python", "ai": "Data interpretation support", "tpack": ["TK", "CK", "TCK", "TPACK"], "field": ["Social sciences", "STEM", "Economics"], "keywords": ["data literacy higher education", "statistical literacy teaching", "Gould data literacy education", "data analysis skills student learning"], "solo": "Relational", "bloom": "Analyse"},
+{"id": 67, "name": "Lab report peer review", "desc": "Students critically evaluate each other's lab reports before submission.", "room": ["Lab", "Any"], "time": "30–60 min", "groupSize": "2–4", "format": ["On campus", "Blended"], "materials": "Lab report rubric", "tech": "LMS", "ai": "Feedback generation", "tpack": ["CK", "PK", "PCK"], "field": ["STEM", "Medicine"], "keywords": ["peer review lab reports", "scientific writing peer feedback", "lab report assessment higher education", "science writing peer evaluation"], "solo": "Relational", "bloom": "Evaluate"},
+{"id": 68, "name": "Error analysis", "desc": "Students analyse incorrect solutions to identify and correct reasoning errors.", "room": ["Any"], "time": "20–40 min", "groupSize": "1–4", "format": ["On campus", "Blended", "Digital"], "materials": "Worked error examples", "tech": "None", "ai": "Error injection for examples", "tpack": ["CK", "PCK"], "field": ["STEM", "Accounting", "Language"], "keywords": ["error analysis learning", "Metcalfe errors learning metacognition", "productive failure learning from mistakes", "mistake-based learning higher education"], "solo": "Relational", "bloom": "Analyse"},
+{"id": 69, "name": "Concept inventory testing", "desc": "Validated diagnostic instruments reveal persistent conceptual misconceptions.", "room": ["Lecture hall", "Any"], "time": "15–30 min", "groupSize": "Any", "format": ["On campus", "Blended", "Digital"], "materials": "Inventory instrument", "tech": "LMS", "ai": "Follow-up explanation", "tpack": ["CK", "PCK", "TK"], "field": ["STEM", "Economics"], "keywords": ["concept inventory higher education", "Hestenes Force Concept Inventory", "diagnostic test misconceptions STEM", "concept inventory student understanding"], "solo": "Multistructural", "bloom": "Understand"},
+{"id": 70, "name": "Peer explanation", "desc": "A student explains a concept to a partner who provides real-time clarification requests.", "room": ["Any"], "time": "10–15 min", "groupSize": "2", "format": ["On campus", "Blended", "Digital"], "materials": "None", "tech": "None", "ai": "Content accuracy check", "tpack": ["CK", "PK", "PCK"], "field": ["Any"], "keywords": ["peer explanation learning", "self-explanation peer teaching", "Chi peer tutoring cognitive", "explaining to others retention"], "solo": "Relational", "bloom": "Understand"},
+{"id": 71, "name": "Microteaching", "desc": "Students teach a short lesson to peers, filmed for reflection and feedback.", "room": ["Seminar", "Lab"], "time": "10–20 min", "groupSize": "5–15", "format": ["On campus", "Digital"], "materials": "None", "tech": "Recording device", "ai": "Feedback analysis", "tpack": ["CK", "PK", "PCK", "TK", "TPACK"], "field": ["Teacher education"], "keywords": ["microteaching higher education", "microteaching teacher development", "Allen microteaching teacher training", "peer observation teaching practice"], "solo": "Relational", "bloom": "Evaluate"},
+{"id": 72, "name": "Demonstration with student prediction", "desc": "Teacher demonstrates a procedure; students predict outcome before each step.", "room": ["Lab", "Lecture hall", "ALC"], "time": "20–45 min", "groupSize": "Any", "format": ["On campus", "Digital"], "materials": "Demo equipment", "tech": "Projector", "ai": "Prediction prompt generation", "tpack": ["CK", "PK", "PCK"], "field": ["STEM", "Medicine"], "keywords": ["demonstration prediction student learning", "Predict Observe Explain POE", "demonstration student prediction engagement", "interactive demonstration science"], "solo": "Multistructural", "bloom": "Understand"},
+{"id": 73, "name": "Guided discovery learning", "desc": "Teacher scaffolds exploration so students derive principles themselves.", "room": ["Lab", "ALC", "Seminar"], "time": "45–90 min", "groupSize": "1–6", "format": ["On campus", "Blended"], "materials": "Materials or data", "tech": "Lab equipment or software", "ai": "Hint scaffolding", "tpack": ["CK", "PK", "PCK", "TCK"], "field": ["STEM", "Social sciences"], "keywords": ["guided discovery learning", "Bruner discovery learning", "inquiry guided instruction", "discovery-based learning higher education"], "solo": "Relational", "bloom": "Understand"},
+{"id": 74, "name": "Problem posing", "desc": "Students formulate their own problems from a situation, building analytical literacy.", "room": ["Any"], "time": "20–40 min", "groupSize": "1–4", "format": ["On campus", "Blended", "Digital"], "materials": "Situational prompts", "tech": "None", "ai": "Situation generation", "tpack": ["CK", "PK"], "field": ["Mathematics", "STEM", "Education"], "keywords": ["problem posing mathematics education", "Silver problem posing", "student-generated problems creativity", "problem formulation learning mathematics"], "solo": "Extended abstract", "bloom": "Create"},
+{"id": 75, "name": "Two-stage examination", "desc": "Individual exam followed immediately by collaborative group version of same exam.", "room": ["Any"], "time": "60–90 min", "groupSize": "3–6", "format": ["On campus"], "materials": "Exam booklets", "tech": "None", "ai": "Question design", "tpack": ["PK", "PCK"], "field": ["Any"], "keywords": ["two-stage collaborative exam", "Gilley Clarkston two-stage exam", "group exam collaborative assessment", "collaborative testing higher education"], "solo": "Relational", "bloom": "Evaluate"},
+{"id": 76, "name": "Structured reflection protocol", "desc": "Students use a structured framework (e.g., Gibbs cycle) for written reflection.", "room": ["Any"], "time": "20–40 min", "groupSize": "Individual", "format": ["On campus", "Blended", "Digital"], "materials": "Reflection template", "tech": "LMS", "ai": "Prompt generation, feedback", "tpack": ["PK"], "field": ["Nursing", "Teacher education", "Social work"], "keywords": ["structured reflection Gibbs cycle", "reflective practice professional education", "Gibbs reflective cycle learning", "structured reflection protocol nursing teacher"], "solo": "Relational", "bloom": "Analyse"},
+{"id": 77, "name": "Service learning", "desc": "Students apply discipline knowledge in real community settings with reflection.", "room": ["Community site"], "time": "Multi-week", "groupSize": "1–10", "format": ["On campus", "Blended"], "materials": "Community partner agreement", "tech": "LMS for reflection", "ai": "Reflection prompts", "tpack": ["CK", "PK", "PCK"], "field": ["Social work", "Education", "Medicine", "Any"], "keywords": ["service learning higher education", "Eyler Giles service learning", "community-based learning civic engagement", "experiential service learning outcomes"], "solo": "Extended abstract", "bloom": "Apply"},
+{"id": 78, "name": "Experiential learning cycle", "desc": "Activities structured around Kolb's concrete experience, reflection, conceptualisation, experimentation.", "room": ["Lab", "Studio", "Field"], "time": "Multi-session", "groupSize": "Any", "format": ["On campus", "Blended"], "materials": "Experience-based tasks", "tech": "None", "ai": "Reflection prompts", "tpack": ["PK", "PCK"], "field": ["Any"], "keywords": ["experiential learning cycle Kolb", "Kolb experiential learning model", "concrete experience reflective observation", "learning cycle higher education"], "solo": "Extended abstract", "bloom": "Analyse"},
+{"id": 79, "name": "Authentic assessment task", "desc": "Students produce real-world artefacts assessed by professional criteria.", "room": ["Any"], "time": "Multi-week", "groupSize": "Any", "format": ["On campus", "Blended", "Digital"], "materials": "Task brief", "tech": "LMS, relevant professional tools", "ai": "Artefact review, feedback", "tpack": ["CK", "PK", "PCK", "TCK"], "field": ["Any"], "keywords": ["authentic assessment higher education", "Wiggins authentic assessment", "real-world task assessment university", "performance-based assessment outcomes"], "solo": "Extended abstract", "bloom": "Apply"},
+{"id": 80, "name": "Online discussion forum", "desc": "Asynchronous text-based discussion in LMS forums.", "room": ["Digital"], "time": "Asynchronous", "groupSize": "Any", "format": ["Digital", "Blended"], "materials": "None", "tech": "LMS discussion board", "ai": "Discussion prompt design, moderation", "tpack": ["TK", "TCK", "TPK", "TPACK"], "field": ["Any"], "keywords": ["online discussion forum higher education", "asynchronous discussion learning", "Garrison Community of Inquiry online", "discussion board student engagement"], "solo": "Multistructural", "bloom": "Understand"},
+{"id": 81, "name": "Video-based discussion", "desc": "Students watch a short video clip then discuss implications or critique.", "room": ["Any"], "time": "20–45 min", "groupSize": "Any", "format": ["On campus", "Blended", "Digital"], "materials": "Video clip", "tech": "LMS, YouTube, projector", "ai": "Discussion prompt generation", "tpack": ["TK", "TCK", "TPACK"], "field": ["Any"], "keywords": ["video-based learning higher education", "Brame active learning video", "pre-class video flipped learning", "video discussion student analysis"], "solo": "Relational", "bloom": "Analyse"},
+{"id": 82, "name": "Student-created videos", "desc": "Students produce short explanatory or creative videos as a learning product.", "room": ["Any"], "time": "Multi-week", "groupSize": "1–4", "format": ["Blended", "Digital"], "materials": "Recording device", "tech": "Video editing software, LMS", "ai": "Script development, editing feedback", "tpack": ["TK", "TCK", "TPACK"], "field": ["Any"], "keywords": ["student-created videos learning", "video production student engagement", "digital media creation learning outcomes", "student video assessment higher education"], "solo": "Extended abstract", "bloom": "Create"},
+{"id": 83, "name": "Digital storytelling", "desc": "Students create multimedia narratives combining text, image, audio, and video.", "room": ["Any"], "time": "Multi-week", "groupSize": "1–3", "format": ["Blended", "Digital"], "materials": "None", "tech": "iMovie, Canva, Adobe Express", "ai": "Story structure, narration", "tpack": ["TK", "TCK", "TPACK"], "field": ["Humanities", "Social work", "Education", "Any"], "keywords": ["digital storytelling education", "Robin digital storytelling learning", "narrative digital media student learning", "student digital story creation"], "solo": "Extended abstract", "bloom": "Create"},
+{"id": 84, "name": "Podcast production", "desc": "Students record and publish podcast episodes on course topics.", "room": ["Any"], "time": "Multi-week", "groupSize": "1–3", "format": ["Blended", "Digital"], "materials": "Microphone", "tech": "Audacity, Spotify for Podcasters", "ai": "Script, show notes, transcription", "tpack": ["TK", "TCK", "TPACK"], "field": ["Any"], "keywords": ["podcast production learning", "student podcast creation education", "audio production student engagement", "Heilesen podcast learning higher education"], "solo": "Extended abstract", "bloom": "Create"},
+{"id": 85, "name": "Gamification of learning", "desc": "Points, badges, and leaderboards added to course activities to increase engagement.", "room": ["Any"], "time": "Ongoing", "groupSize": "Any", "format": ["On campus", "Blended", "Digital"], "materials": "None", "tech": "LMS, gamification plugin", "ai": "Badge design, challenge generation", "tpack": ["TK", "TCK", "TPACK"], "field": ["Any"], "keywords": ["gamification higher education", "Dicheva gamification learning outcomes", "game elements motivation learning", "points badges leaderboards education"], "solo": "Multistructural", "bloom": "Apply"},
+{"id": 86, "name": "Serious games", "desc": "Purpose-designed games used to achieve specific learning outcomes.", "room": ["Computer room", "ALC", "Any"], "time": "45–180 min", "groupSize": "Any", "format": ["On campus", "Digital"], "materials": "Game software", "tech": "Game platform", "ai": "Adaptive challenge", "tpack": ["TK", "TCK", "TPACK"], "field": ["Medicine", "Business", "Economics"], "keywords": ["serious games learning", "game-based learning higher education", "Gee video games learning", "serious game professional education"], "solo": "Relational", "bloom": "Apply"},
+{"id": 87, "name": "Virtual lab", "desc": "Students conduct experiments in a simulated digital laboratory.", "room": ["Digital"], "time": "45–90 min", "groupSize": "1–4", "format": ["Digital", "Blended"], "materials": "None", "tech": "Labster, PhET, Visible Body", "ai": "Guided inquiry prompts", "tpack": ["TK", "CK", "TCK", "TPACK"], "field": ["STEM", "Medicine"], "keywords": ["virtual lab higher education", "Mikropoulos virtual reality education", "online laboratory simulation learning", "virtual experiment science education"], "solo": "Relational", "bloom": "Apply"},
+{"id": 88, "name": "Augmented reality activity", "desc": "Students use AR overlays to explore physical spaces or objects.", "room": ["Lab", "Field", "Any"], "time": "30–60 min", "groupSize": "1–6", "format": ["On campus", "Digital"], "materials": "AR-capable device", "tech": "AR app", "ai": "Scenario generation", "tpack": ["TK", "TCK", "TPACK"], "field": ["Medicine", "Architecture", "Science"], "keywords": ["augmented reality education", "Bower augmented reality learning", "AR mobile technology higher education", "augmented reality student engagement"], "solo": "Relational", "bloom": "Apply"},
+{"id": 89, "name": "Collaborative mind mapping", "desc": "Groups jointly build a mind map to organise and connect ideas.", "room": ["Any"], "time": "15–30 min", "groupSize": "2–10", "format": ["On campus", "Blended", "Digital"], "materials": "None", "tech": "Miro, MindMeister, paper", "ai": "Branch suggestion", "tpack": ["CK", "TK", "TCK"], "field": ["Any"], "keywords": ["collaborative mind mapping", "group mind map learning", "collaborative visual knowledge structure", "mind mapping concept learning higher education"], "solo": "Relational", "bloom": "Analyse"},
+{"id": 90, "name": "Improvisational theatre techniques", "desc": "Drama exercises used to build communication, empathy, and spontaneity.", "room": ["Studio", "Seminar", "ALC"], "time": "30–60 min", "groupSize": "10–30", "format": ["On campus"], "materials": "None", "tech": "None", "ai": "Scenario prompts", "tpack": ["PK", "CK"], "field": ["Teacher education", "Social work", "Medicine", "Humanities"], "keywords": ["improvisational theatre pedagogy", "improv teaching learning creativity", "applied improvisation higher education", "theatre games classroom engagement"], "solo": "Relational", "bloom": "Apply"},
+{"id": 91, "name": "Structured problem-solving pairs", "desc": "One student acts as problem-solver, the other as coach; roles alternate.", "room": ["Any"], "time": "20–40 min", "groupSize": "2", "format": ["On campus", "Blended"], "materials": "Problem set", "tech": "None", "ai": "Hint generation", "tpack": ["CK", "PK", "PCK"], "field": ["STEM", "Accounting", "Any"], "keywords": ["structured problem-solving pairs", "think-aloud paired problem solving TAPPS", "dyadic problem solving Barkley", "cooperative problem-solving pairs"], "solo": "Relational", "bloom": "Analyse"},
+{"id": 92, "name": "Expert panel", "desc": "Students act as expert panel members and field questions from peers.", "room": ["Seminar", "Lecture hall"], "time": "30–60 min", "groupSize": "10–60", "format": ["On campus", "Blended"], "materials": "Preparation materials", "tech": "Microphone (large group)", "ai": "Question preparation", "tpack": ["CK", "PK", "PCK"], "field": ["Any"], "keywords": ["expert panel student discussion", "student panel presentation higher education", "Davis panel teaching tool", "student expert role learning"], "solo": "Relational", "bloom": "Evaluate"},
+{"id": 93, "name": "Research symposium", "desc": "Students present research-in-progress at an organised peer conference.", "room": ["Lecture hall", "ALC", "Multiple rooms"], "time": "Half or full day", "groupSize": "20–200", "format": ["On campus", "Blended"], "materials": "Poster or slides", "tech": "Projector, poster boards", "ai": "Abstract improvement, poster design", "tpack": ["CK", "PK", "PCK", "TK"], "field": ["Any"], "keywords": ["undergraduate research symposium", "research poster presentation learning", "student conference presentation", "research-based learning outcomes university"], "solo": "Extended abstract", "bloom": "Create"},
+{"id": 94, "name": "Citizen science project", "desc": "Students contribute real data to an ongoing community or scientific project.", "room": ["Field", "Lab", "Digital"], "time": "Multi-week", "groupSize": "1–10", "format": ["On campus", "Blended", "Digital"], "materials": "Data collection tools", "tech": "Citizen science platform", "ai": "Data interpretation", "tpack": ["CK", "TK", "TCK", "TPACK"], "field": ["Biology", "Environmental science", "Social sciences"], "keywords": ["citizen science higher education", "Bonney citizen science learning", "participatory research student engagement", "real data citizen science education"], "solo": "Extended abstract", "bloom": "Analyse"},
+{"id": 95, "name": "Living lab", "desc": "Students engage with real institutional or community problems as design researchers.", "room": ["Field", "ALC", "Community site"], "time": "Multi-week", "groupSize": "3–10", "format": ["On campus", "Blended"], "materials": "Project brief", "tech": "Collaboration tools", "ai": "Problem framing, synthesis", "tpack": ["CK", "PK", "PCK", "TK", "TPACK"], "field": ["Engineering", "Social sciences", "Urban planning"], "keywords": ["living lab experiential learning", "real-world laboratory student project", "campus as laboratory learning", "living lab higher education sustainability"], "solo": "Extended abstract", "bloom": "Create"},
+{"id": 96, "name": "Think-aloud protocol", "desc": "Students verbalise their reasoning while solving a problem; peers or teacher observe.", "room": ["Lab", "Seminar"], "time": "15–30 min", "groupSize": "1–4", "format": ["On campus", "Digital"], "materials": "Problem", "tech": "Recording (optional)", "ai": "Metacognitive scaffolding", "tpack": ["CK", "PK", "PCK"], "field": ["STEM", "Teacher education", "Medicine"], "keywords": ["think-aloud protocol cognitive", "Ericsson Simon verbal protocol", "metacognitive awareness think-aloud", "think-aloud instruction higher education"], "solo": "Relational", "bloom": "Analyse"},
+{"id": 97, "name": "Scenario planning", "desc": "Groups develop plausible future scenarios and analyse their implications.", "room": ["Seminar", "ALC"], "time": "60–120 min", "groupSize": "4–8", "format": ["On campus", "Blended"], "materials": "Scenario template", "tech": "Shared documents", "ai": "Trend analysis, scenario drafting", "tpack": ["CK", "PK", "PCK", "TK"], "field": ["Business", "Economics", "Social sciences", "Engineering"], "keywords": ["scenario planning education", "Schoemaker scenario planning learning", "futures thinking higher education", "strategic scenario learning outcomes"], "solo": "Extended abstract", "bloom": "Evaluate"},
+{"id": 98, "name": "Ethics case analysis", "desc": "Students apply ethical frameworks to analyse real or constructed professional dilemmas.", "room": ["Seminar", "ALC", "Any"], "time": "45–90 min", "groupSize": "3–8", "format": ["On campus", "Blended", "Digital"], "materials": "Case text", "tech": "LMS (optional)", "ai": "Counter-argument generation, framework mapping", "tpack": ["CK", "PK", "PCK"], "field": ["Medicine", "Law", "Engineering", "Social work", "Any"], "keywords": ["ethics case analysis higher education", "moral reasoning professional education", "ethical decision-making Rest model", "ethics pedagogy case study"], "solo": "Extended abstract", "bloom": "Evaluate"},
+{"id": 99, "name": "Interdisciplinary synthesis task", "desc": "Students connect concepts from two or more disciplines to solve an integrative problem.", "room": ["Any"], "time": "60–120 min", "groupSize": "3–8", "format": ["On campus", "Blended", "Digital"], "materials": "Cross-disciplinary case", "tech": "LMS", "ai": "Cross-domain connection support", "tpack": ["CK", "PCK", "TPACK"], "field": ["Any"], "keywords": ["interdisciplinary learning higher education", "Newell interdisciplinary synthesis", "cross-disciplinary integration student", "interdisciplinary inquiry university"], "solo": "Extended abstract", "bloom": "Evaluate"},
+{"id": 100, "name": "AI-augmented seminar", "desc": "Students use AI tools during structured seminar to generate, critique, and refine ideas.", "room": ["Seminar", "ALC", "Digital"], "time": "45–90 min", "groupSize": "10–30", "format": ["On campus", "Blended", "Digital"], "materials": "None", "tech": "AI tools (ChatGPT, Claude etc.), LMS", "ai": "Co-creation, critique, Socratic dialogue, revision", "tpack": ["TK", "TCK", "TPK", "TPACK"], "field": ["Any"], "keywords": ["AI-augmented learning higher education", "Mollick AI pedagogy", "generative AI student learning", "artificial intelligence active learning university"], "solo": "Extended abstract", "bloom": "Create"}
+];
+
+const tpackDefs = {
+  "CK":    "Content Knowledge: deep subject-matter expertise",
+  "PK":    "Pedagogical Knowledge: teaching, learning and assessment methods",
+  "TK":    "Technological Knowledge: ability to use and adapt technology",
+  "PCK":   "Pedagogical Content Knowledge: teaching strategies for specific content",
+  "TCK":   "Technological Content Knowledge: technology reshaping content representation",
+  "TPK":   "Technological Pedagogical Knowledge: technology enabling new teaching approaches",
+  "TPACK": "Technological Pedagogical Content Knowledge: full integration of all three"
+};
+
+const allTpack = ["CK","PK","TK","PCK","TCK","TPK","TPACK"];
+const allRooms = [...new Set(strategies.flatMap(s=>s.room))].filter(r=>r!=='Any').sort();
+const allFormats = [...new Set(strategies.flatMap(s=>s.format))].sort();
+const allFields = [...new Set(strategies.flatMap(s=>s.field))].filter(f=>f!=='Any').sort();
+const allTimes = ["2–15 min","20–60 min","60–120 min","90–180 min","Full session","Multi-session","Multi-week","Ongoing","Asynchronous"];
+const allGroupSizes = ["Individual","2","3–6","5–20","10–40","20–100","40–200","100–400+","Any"];
+
+let filters = {search:"",room:"",format:"",time:"",groupSize:"",field:"",tpack:[],solo:"",bloom:""};
+let sortKey = "name";
+let sortDir = 1;
+
+function matchTime(s, tf) {
+  if(!tf) return true;
+  const t=s.time;
+  if(tf==="2–15 min") return /^[0-9]/.test(t)&&(t.includes("2–5")||t.includes("5–10")||t.includes("5–15")||t.includes("10–15")||t.includes("2–10")||t.includes("10–20")||t.includes("5–20"));
+  if(tf==="20–60 min") return t.includes("20–")||t.includes("30–")||t.includes("45–")||t.includes("15–30")||t.includes("20–45")||t.includes("30–60");
+  if(tf==="60–120 min") return t.includes("60–")||t.includes("45–90")||t.includes("45–75")||t.includes("60–120")||t.includes("45–120");
+  if(tf==="90–180 min") return t.includes("90–")||t.includes("60–180")||t.includes("90–180");
+  if(tf==="Full session") return t==="Full session"||t==="Full session+";
+  if(tf==="Multi-session") return t==="Multi-session";
+  if(tf==="Multi-week") return t==="Multi-week";
+  if(tf==="Ongoing") return t==="Ongoing";
+  if(tf==="Asynchronous") return t==="Asynchronous";
+  return true;
+}
+function matchGroupSize(s, gf) {
+  if(!gf) return true;
+  const g=s.groupSize;
+  if(gf==="Individual") return g==="Individual"||g==="Individual or pair";
+  if(gf==="2") return g==="2"||g==="Individual or pair";
+  if(gf==="3–6") return ["3–5","3–6","3–8","1–4","1–6","1–3","2","2–4","2–6","2–10","1–10"].includes(g);
+  if(gf==="5–20") return ["5–15","5–20","5–25","5–30","5–40","10–15","10–20","4–8","3–8","4–20","3–5","3–10","1–6","3–6"].includes(g);
+  if(gf==="10–40") return ["10–25","10–30","10–40","15–40","20–30","10–60","20–40","10–24"].includes(g);
+  if(gf==="20–100") return ["20–60","20–100","20–200","30–60","40–60"].includes(g);
+  if(gf==="40–200") return ["40–400+","40–60","20–200","50–200","40–200"].includes(g);
+  if(gf==="100–400+") return g==="Any"||g.includes("400+");
+  if(gf==="Any") return g==="Any";
+  return true;
+}
+
+function getFiltered() {
+  return strategies.filter(s=>{
+    if(filters.search){const q=filters.search.toLowerCase();if(!s.name.toLowerCase().includes(q)&&!s.desc.toLowerCase().includes(q)&&!s.field.join().toLowerCase().includes(q))return false;}
+    if(filters.room&&!s.room.includes(filters.room)&&!s.room.includes("Any"))return false;
+    if(filters.format&&!s.format.includes(filters.format))return false;
+    if(filters.time&&!matchTime(s,filters.time))return false;
+    if(filters.groupSize&&!matchGroupSize(s,filters.groupSize))return false;
+    if(filters.field&&!s.field.includes(filters.field)&&!s.field.includes("Any"))return false;
+    if(filters.tpack.length>0&&!filters.tpack.some(t=>s.tpack.includes(t)))return false;
+    if(filters.solo&&s.solo!==filters.solo)return false;
+    if(filters.bloom&&s.bloom!==filters.bloom)return false;
+    return true;
+  }).sort((a,b)=>{
+    let av=a[sortKey],bv=b[sortKey];
+    if(typeof av==='string')return sortDir*av.localeCompare(bv);
+    return sortDir*(av-bv);
+  });
+}
+
+function renderFilters() {
+  const defs=[
+    {key:'room',label:'Room type',info:'pop-room',opts:[''].concat(allRooms)},
+    {key:'format',label:'Format',info:null,opts:[''].concat(allFormats)},
+    {key:'time',label:'Time required',info:null,opts:[''].concat(allTimes)},
+    {key:'groupSize',label:'Group size',info:null,opts:[''].concat(allGroupSizes)},
+    {key:'field',label:'Field of study',info:'pop-field',opts:[''].concat(allFields)},
+  ];
+  document.getElementById('filter-grid').innerHTML=defs.map(d=>`<div class="filter-group"><label class="filter-label">${d.label}${d.info?` <button class="info-btn" onclick="openPopover('${d.info}',this)" aria-label="About ${d.label}">?</button>`:''}</label><select onchange="setFilter('${d.key}',this.value)"><option value="">All</option>${d.opts.filter(Boolean).map(o=>`<option value="${o}"${filters[d.key]===o?' selected':''}>${o}</option>`).join('')}</select></div>`).join('');
+}
+
+function renderTpack() {
+  document.getElementById('tpack-row').innerHTML=allTpack.map(t=>`<button class="tpack-btn${filters.tpack.includes(t)?' active':''}" onclick="toggleTpack('${t}')" onmouseenter="showTpackDef('${t}')" onmouseleave="clearTpackDef()">${t}</button>`).join('');
+}
+
+function showTpackDef(t){document.getElementById('tpack-legend').textContent=tpackDefs[t];}
+function clearTpackDef(){
+  if(filters.tpack.length>0)document.getElementById('tpack-legend').textContent='Active: '+filters.tpack.map(t=>tpackDefs[t]).join(' · ');
+  else document.getElementById('tpack-legend').textContent='Hover a button to see the knowledge domain definition.';
+}
+
+function renderTable() {
+  const data=getFiltered();
+  document.getElementById('count-badge').textContent=data.length;
+  document.getElementById('results-label').textContent=`of ${strategies.length} strategies shown`;
+  const cols=[
+    {key:'name',label:'Strategy'},
+    {key:'room',label:'Room'},
+    {key:'time',label:'Time'},
+    {key:'groupSize',label:'Group size'},
+    {key:'format',label:'Format'},
+    {key:'materials',label:'Materials',info:'pop-materials'},
+    {key:'tech',label:'Technology'},
+    {key:'ai',label:'AI use',info:'pop-ai'},
+    {key:'tpack',label:'TPACK',info:'pop-tpack'},
+    {key:'field',label:'Field',info:'pop-field'},
+    {key:'solo',label:'SOLO',info:'pop-solo'},
+    {key:'bloom',label:"Bloom's",info:'pop-bloom'},
+  ];
+  document.getElementById('table-head').innerHTML=`<tr>${cols.map(c=>`<th onclick="setSort('${c.key}')" class="${sortKey===c.key?'sorted':''}">${c.label}${c.info?` <button class="info-btn" onclick="event.stopPropagation();openPopover('${c.info}',this)" aria-label="About ${c.label}">?</button>`:''}<span class="sort-arrow">${sortKey===c.key?(sortDir===1?'↑':'↓'):'↕'}</span></th>`).join('')}</tr>`;
+  if(data.length===0){document.getElementById('table-body').innerHTML=`<tr><td colspan="${cols.length}" class="no-results">No strategies match the current filters. Try removing one or more filters.</td></tr>`;return;}
+  const colCount = 12;
+  document.getElementById('table-body').innerHTML=data.map(s=>`
+  <tr class="data-row" onclick="toggleExpand(${s.id})" id="row-${s.id}">
+    <td class="name-cell"><div class="name-cell-inner"><svg class="expand-chevron" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.5 2.5L9.5 7L4.5 11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><div><div class="strategy-name">${s.name}</div><div class="strategy-desc">${s.desc}</div></div></div></td>
+    <td>${s.room.map(r=>`<span class="tag tag-room">${r}</span>`).join('')}</td>
+    <td><span class="tag tag-time">${s.time}</span></td>
+    <td>${s.groupSize}</td>
+    <td>${s.format.map(f=>`<span class="tag tag-format">${f}</span>`).join('')}</td>
+    <td class="muted-cell">${s.materials}</td>
+    <td class="muted-cell">${s.tech}</td>
+    <td class="muted-cell">${s.ai}</td>
+    <td>${s.tpack.map(t=>`<span class="tag tag-tpack" title="${tpackDefs[t]}">${t}</span>`).join('')}</td>
+    <td>${s.field.map(f=>`<span class="tag tag-field">${f}</span>`).join('')}</td>
+    <td><span class="tag tag-solo">${s.solo||''}</span></td>
+    <td><span class="tag tag-bloom">${s.bloom||''}</span></td>
+  </tr>
+  <tr class="expand-row" id="expand-${s.id}">
+    <td colspan="${colCount}">
+      <div class="expand-panel" id="panel-${s.id}">
+        <p>${expandedDescs[s.id] || ''}</p>
+        <p class="panel-keywords"><span class="kw-label">Taxonomy levels:</span> <span class="tag tag-solo" title="SOLO taxonomy level">SOLO: ${s.solo||''}</span> <span class="tag tag-bloom" title="Bloom\'s taxonomy level">Bloom\'s: ${s.bloom||''}</span></p>
+        <p class="panel-keywords"><span class="kw-label">Search terms for research:</span> ${(s.keywords||[]).map(k=>`<a href="https://www.semanticscholar.org/search?q=${encodeURIComponent(k)}&sort=relevance" target="_blank" rel="noopener" class="kw-link">${k}</a>`).join('')}</p>
+      </div>
+    </td>
+  </tr>`).join('');
+}
+
+function setFilter(key,val){filters[key]=val;renderTable();}
+function toggleTpack(t){
+  filters.tpack=filters.tpack.includes(t)?filters.tpack.filter(x=>x!==t):[...filters.tpack,t];
+  renderTpack();clearTpackDef();renderTable();
+}
+function setSort(key){
+  if(sortKey===key)sortDir=-sortDir;else{sortKey=key;sortDir=1;}
+  renderTable();
+}
+function resetFilters(){
+  filters={search:"",room:"",format:"",time:"",groupSize:"",field:"",tpack:[],solo:"",bloom:""};
+  document.getElementById('search').value='';
+  renderFilters();renderTpack();clearTpackDef();renderSolo();renderBloom();clearSoloDef();clearBloomDef();renderTable();
+}
+
+function toggleExpand(id) {
+  const row = document.getElementById('row-' + id);
+  const panel = document.getElementById('panel-' + id);
+  const isOpen = panel.classList.contains('open');
+  panel.classList.toggle('open', !isOpen);
+  row.classList.toggle('expanded', !isOpen);
+}
+
+document.getElementById('search').addEventListener('input',e=>{filters.search=e.target.value;renderTable();});
+
+const soloLevels = ["Unistructural","Multistructural","Relational","Extended abstract"];
+const soloDefs = {
+  "Unistructural":    "One relevant aspect is identified: a single fact or element is grasped.",
+  "Multistructural":  "Several relevant aspects are identified but not yet connected into a whole.",
+  "Relational":       "Parts are connected and integrated into a coherent understanding.",
+  "Extended abstract":"Understanding is generalised beyond the immediate context to new situations."
+};
+
+const bloomLevels = ["Remember","Understand","Apply","Analyse","Evaluate","Create"];
+const bloomDefs = {
+  "Remember":   "Recall facts and basic concepts from memory.",
+  "Understand": "Explain ideas or concepts in your own words.",
+  "Apply":      "Use information in a new situation or context.",
+  "Analyse":    "Draw connections, identify patterns and components.",
+  "Evaluate":   "Justify a decision or position against criteria.",
+  "Create":     "Produce something new by combining or reorganising elements."
+};
+
+function renderSolo() {
+  document.getElementById('solo-row').innerHTML=soloLevels.map(l=>`<button class="solo-btn${filters.solo===l?' active':''}" onclick="setSolo('${l}')" onmouseenter="showSoloDef('${l}')" onmouseleave="clearSoloDef()">${l}</button>`).join('');
+}
+function renderBloom() {
+  document.getElementById('bloom-row').innerHTML=bloomLevels.map(l=>`<button class="bloom-btn${filters.bloom===l?' active':''}" onclick="setBloom('${l}')" onmouseenter="showBloomDef('${l}')" onmouseleave="clearBloomDef()">${l}</button>`).join('');
+}
+function showSoloDef(l){document.getElementById('solo-legend').textContent=soloDefs[l];}
+function clearSoloDef(){
+  if(filters.solo)document.getElementById('solo-legend').textContent='Active: '+soloDefs[filters.solo];
+  else document.getElementById('solo-legend').textContent='Hover a level to see its description.';
+}
+function showBloomDef(l){document.getElementById('bloom-legend').textContent=bloomDefs[l];}
+function clearBloomDef(){
+  if(filters.bloom)document.getElementById('bloom-legend').textContent='Active: '+bloomDefs[filters.bloom];
+  else document.getElementById('bloom-legend').textContent='Hover a level to see its description.';
+}
+function setSolo(l){
+  filters.solo = filters.solo===l ? '' : l;
+  renderSolo(); clearSoloDef(); renderTable();
+}
+function setBloom(l){
+  filters.bloom = filters.bloom===l ? '' : l;
+  renderBloom(); clearBloomDef(); renderTable();
+}
+
+function openPopover(id, btn) {
+  // Close any open popovers
+  document.querySelectorAll('.info-popover').forEach(p=>p.classList.remove('open'));
+  const pop = document.getElementById(id);
+  if(!pop) return;
+  pop.classList.add('open');
+  // Position near button
+  const rect = btn.getBoundingClientRect();
+  const pw = 380;
+  let left = rect.left;
+  if(left + pw > window.innerWidth - 16) left = window.innerWidth - pw - 16;
+  if(left < 8) left = 8;
+  let top = rect.bottom + 8;
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+  pop.style.width = pw + 'px';
+  // Close on outside click
+  setTimeout(()=>{ document.addEventListener('click', outsidePopoverClose, {once:true}); }, 10);
+}
+function closePopover(id) {
+  const pop = document.getElementById(id);
+  if(pop) pop.classList.remove('open');
+}
+function outsidePopoverClose(e) {
+  if(!e.target.closest('.info-popover') && !e.target.closest('.info-btn')) {
+    document.querySelectorAll('.info-popover').forEach(p=>p.classList.remove('open'));
+  }
+}
+
+renderFilters();renderTpack();renderSolo();renderBloom();renderTable();
+
+
+</script>
+</body>
+</html>
